@@ -103,6 +103,9 @@ private:
 
 class SecureChannel : public AbstractSecureDataParcel {
 public:
+    /*! Use existing channel but use a a different receiver.
+     */
+    SecureChannel(SecureChannel *channel, Contact *receiver);
     // incoming
     SecureChannel(qint8 type, Contact *receiver);
     // outgoing
@@ -194,6 +197,8 @@ private:
 
 class MessageChannel : public SecureChannel {
 public:
+    //! adapt channel for different receiver:
+    MessageChannel(MessageChannel *channel, Contact *receiver);
     // incoming:
     MessageChannel(Contact *receiver);
     // outgoing:

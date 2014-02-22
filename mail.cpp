@@ -201,6 +201,14 @@ WP::err ParcelCrypto::getEncryptedSymmetricKey(Contact *receiver, const QString 
     return error;
 }
 
+
+SecureChannel::SecureChannel(SecureChannel *channel, Contact *_receiver) :
+    AbstractSecureDataParcel(channel->getType()),
+    receiver(_receiver)
+{
+    parcelCrypto = channel->parcelCrypto;
+}
+
 SecureChannel::SecureChannel(qint8 type, Contact *_receiver) :
     AbstractSecureDataParcel(type),
     receiver(_receiver)
@@ -390,6 +398,12 @@ WP::err XMLSecureParcel::write(ProtocolOutStream *outStream, Contact *sender,
     return WP::kOk;
 }
 
+
+MessageChannel::MessageChannel(MessageChannel *channel, Contact *receiver) :
+    SecureChannel(channel, receiver)
+{
+
+}
 
 MessageChannel::MessageChannel(Contact *receiver) :
     SecureChannel(kMessageChannelId, receiver)
