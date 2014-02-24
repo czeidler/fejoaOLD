@@ -24,6 +24,7 @@ class Session {
 		$this->setServerUser("");
 		$this->setUserRoles(array());
 		$this->profile = null;
+		$this->database = null;
 	}
 
 	public function getDatabase() {
@@ -31,20 +32,27 @@ class Session {
 			return $this->database;
 		$serverUser = $this->getServerUser();
 		if ($serverUser == "")
-			throw new Exception("no server user");
-		return new GitDatabase($serverUser."/.git");
+			return null;
+		$databasePath = $serverUser."/.git";
+		if (!file_exists($databasePath))
+			return null;
+		return new GitDatabase($databasePath);
 	}
 
 	public function getProfile() {
 		if ($this->profile !== null)
 			return $this->profile;
 		$database = $this->getDatabase();
+		if ($database === null)
+			return null;
 		$this->profile = new Profile($database, "profile", "");
 		return $this->profile;
 	}
 
 	public function getMainUserIdentity() {
 		$profile = $this->getProfile();
+		if ($profile === null)
+			return null;
 		return $profile->getUserIdentityAt(0);
 	}
 

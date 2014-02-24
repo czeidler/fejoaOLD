@@ -92,7 +92,8 @@ class ContactRequestStanzaHandler extends InStanzaHandler {
 
 		$userIdentity = Session::get()->getMainUserIdentity();
 		if ($userIdentity === null) {
-			$this->printError("error", "can't get user identity");
+			$this->printError("error", "can't find user: ".$this->serverUser);
+			Session::get()->clear();
 			return;
 		}
 
