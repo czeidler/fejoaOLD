@@ -202,9 +202,10 @@ WP::err ParcelCrypto::getEncryptedSymmetricKey(Contact *receiver, const QString 
 }
 
 
-SecureChannel::SecureChannel(SecureChannel *channel, Contact *_receiver) :
+SecureChannel::SecureChannel(SecureChannel *channel, Contact *_receiver, const QString &asymKeyId) :
     AbstractSecureDataParcel(channel->getType()),
-    receiver(_receiver)
+    receiver(_receiver),
+    asymmetricKeyId(asymKeyId)
 {
     parcelCrypto = channel->parcelCrypto;
 }
@@ -399,20 +400,23 @@ WP::err XMLSecureParcel::write(ProtocolOutStream *outStream, Contact *sender,
 }
 
 
-MessageChannel::MessageChannel(MessageChannel *channel, Contact *receiver) :
-    SecureChannel(channel, receiver)
+MessageChannel::MessageChannel(MessageChannel *channel, Contact *receiver, const QString &asymKeyId) :
+    SecureChannel(channel, receiver, asymKeyId),
+    newLocaleInfo(false)
 {
-
+    parentChannelUid = channel->parentChannelUid;
 }
 
 MessageChannel::MessageChannel(Contact *receiver) :
-    SecureChannel(kMessageChannelId, receiver)
+    SecureChannel(kMessageChannelId, receiver),
+    newLocaleInfo(true)
 {
 
 }
 
 MessageChannel::MessageChannel(Contact *receiver, const QString &asymKeyId, MessageChannel *parent) :
-    SecureChannel(kMessageChannelId, receiver, asymKeyId)
+    SecureChannel(kMessageChannelId, receiver, asymKeyId),
+    newLocaleInfo(true)
 {
     if (parent != NULL)
         parentChannelUid =parent->getUid();
@@ -469,13 +473,18 @@ WP::err MessageChannel::readConfidentData(QBuffer &mainData)
         return error;
 
     parentChannelUid = readString(mainData);
-
+    newLocaleInfo = false;
     return WP::kOk;
 }
 
 QString MessageChannel::getParentChannelUid() const
 {
     return parentChannelUid;
+}
+
+bool MessageChannel::isNewLocale() const
+{
+    return newLocaleInfo;
 }
 
 
@@ -487,12 +496,18 @@ MessageChannelInfo::MessageChannelInfo(MessageChannelFinder *_channelFinder) :
 
 }
 
-MessageChannelInfo::MessageChannelInfo(SecureChannel *channel) :
+MessageChannelInfo::MessageChannelInfo(MessageChannel *channel) :
     SecureChannelParcel(kMessageChannelInfoId, channel),
     channelFinder(NULL),
     newLocaleInfo(true)
 {
 
+}
+
+MessageChannelInfo::~MessageChannelInfo()
+{
+    if (((MessageChannel*)channel)->isNewLocale())
+        delete channel;
 }
 
 void MessageChannelInfo::setSubject(const QString &subject)
@@ -619,6 +634,12 @@ Message::Message(MessageChannelInfo *info) :
     channelInfo(info)
 {
     setChannel(info->getChannel());
+}
+
+Message::~Message()
+{
+    if (channelInfo != NULL && channelInfo->isNewLocale())
+        delete channelInfo;
 }
 
 MessageChannelInfo *Message::getChannelInfo() const

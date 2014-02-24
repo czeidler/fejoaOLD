@@ -105,7 +105,7 @@ class SecureChannel : public AbstractSecureDataParcel {
 public:
     /*! Use existing channel but use a a different receiver.
      */
-    SecureChannel(SecureChannel *channel, Contact *receiver);
+    SecureChannel(SecureChannel *channel, Contact *receiver, const QString &asymKeyId);
     // incoming
     SecureChannel(qint8 type, Contact *receiver);
     // outgoing
@@ -155,7 +155,8 @@ public:
 class MessageChannelInfo : public SecureChannelParcel {
 public:
     MessageChannelInfo(MessageChannelFinder *channelFinder);
-    MessageChannelInfo(SecureChannel *channel);
+    MessageChannelInfo(MessageChannel *channel);
+    ~MessageChannelInfo();
 
     void setSubject(const QString &subject);
     const QString &getSubject() const;
@@ -198,13 +199,15 @@ private:
 class MessageChannel : public SecureChannel {
 public:
     //! adapt channel for different receiver:
-    MessageChannel(MessageChannel *channel, Contact *receiver);
+    MessageChannel(MessageChannel *channel, Contact *receiver, const QString &asymKeyId);
     // incoming:
     MessageChannel(Contact *receiver);
     // outgoing:
     MessageChannel(Contact *receiver, const QString &asymKeyId, MessageChannel *parentChannel = NULL);
 
     QString getParentChannelUid() const;
+
+    bool isNewLocale() const;
 
 protected:
     virtual WP::err writeMainData(QDataStream &stream);
@@ -215,6 +218,8 @@ protected:
 
 private:
     QString parentChannelUid;
+
+    bool newLocaleInfo;
 };
 
 
@@ -222,6 +227,7 @@ class Message : public SecureChannelParcel {
 public:
     Message(MessageChannelFinder *channelFinder);
     Message(MessageChannelInfo *info);
+    ~Message();
 
     MessageChannelInfo *getChannelInfo() const;
 

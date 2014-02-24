@@ -38,8 +38,11 @@ void NewMessageView::onSendButtonClicked()
         return;
 
     QString subject = subjectEdit->text();
-    MessageChannelInfo *channelInfo = new MessageChannelInfo((SecureChannel*)NULL);
+
     Contact *mySelf = mailbox->getOwner()->getMyself();
+
+    MessageChannel *channel = new MessageChannel(NULL, "");
+    MessageChannelInfo *channelInfo = new MessageChannelInfo(channel);
 
     channelInfo->addParticipant(mySelf->getAddress(), mySelf->getUid());
     if (mySelf->getAddress() != address)

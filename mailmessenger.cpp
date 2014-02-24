@@ -67,12 +67,12 @@ void MailMessenger::authConnected(WP::err error)
     } else if (error != WP::kOk)
         return;
 
-    MessageChannel *newMessageChannel = NULL;
-    // channel info
-    if (message->getChannel() == NULL) {
-        newMessageChannel = new MessageChannel(targetContact, targetContact->getKeys()->getMainKeyId());
-        message->setChannel(newMessageChannel);
-        message->getChannelInfo()->setChannel(newMessageChannel);
+    MessageChannel *targetMessageChannel = NULL;
+    if (((MessageChannel*)message->getChannel())->isNewLocale()) {
+        targetMessageChannel = new MessageChannel((MessageChannel*)message->getChannel(), targetContact,
+                                              targetContact->getKeys()->getMainKeyId());
+        message->setChannel(targetMessageChannel);
+        message->getChannelInfo()->setChannel(targetMessageChannel);
     }
 
     QByteArray data;
@@ -88,7 +88,7 @@ void MailMessenger::authConnected(WP::err error)
     QString signatureKeyId = myself->getKeys()->getMainKeyId();
 
     // write new channel
-    if (newMessageChannel != NULL) {
+    if (targetMessageChannel != NULL) {
         error = XMLSecureParcel::write(&outStream, myself, signatureKeyId, message->getChannel(), "channel");
         if (error != WP::kOk) {
             emit sendResult(error);
@@ -116,9 +116,9 @@ void MailMessenger::authConnected(WP::err error)
 
     outStream.flush();
 
-    if (newMessageChannel != NULL)
+    if (targetMessageChannel != NULL)
         message->setChannel(NULL);
-    delete newMessageChannel;
+    delete targetMessageChannel;
 
     if (deleteMessageWhenDone)
         delete message;
