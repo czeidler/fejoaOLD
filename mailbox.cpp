@@ -135,6 +135,61 @@ WP::err Mailbox::open(KeyStoreFinder *keyStoreFinder)
     return error;
 }
 
+WP::err Mailbox::storeChannel(MessageChannel *channel)
+{
+    QString channelPath = pathForChannelId(channel->getUid());
+    return writeParcel(channelPath, channel);
+}
+
+WP::err Mailbox::storeChannelInfo(MessageChannel *channel, MessageChannelInfo *info)
+{
+    QString channelInfoPath = dirForChannelId(channel->getUid());
+    channelInfoPath += "/i/" + makeUidPath(info->getUid());
+    return writeParcel(channelInfoPath, info);
+}
+
+WP::err Mailbox::storeMessage(Message *message, MessageChannel *channel)
+{
+    QString messagePath = pathForMessageId(channel->getUid(), message->getUid());
+    messagePath += "/m";
+    return writeParcel(messagePath, message);
+}
+
+QString Mailbox::pathForMessageId(const QString &channelId, const QString &messageId)
+{
+    return dirForChannelId(channelId) + "/" + makeUidPath(messageId);
+}
+
+QString Mailbox::pathForChannelId(const QString &channelId)
+{
+    return dirForChannelId(channelId) + "/r";
+}
+
+QString Mailbox::dirForChannelId(const QString &channelId)
+{
+    return makeUidPath(channelId);
+}
+
+QString Mailbox::makeUidPath(const QString &uid)
+{
+    QString path = uid.left(2);
+    path += "/";
+    path += uid.mid(2);
+    return path;
+}
+
+WP::err Mailbox::writeParcel(const QString &path, DataParcel *parcel)
+{
+    Contact *myself = fUserIdentity->getMyself();
+
+    QBuffer data;
+    data.open(QBuffer::WriteOnly);
+    WP::err error = parcel->toRawData(myself, myself->getKeys()->getMainKeyId(), data);
+    if (error != WP::kOk)
+        return error;
+    return write(path, data.buffer());
+}
+
 void Mailbox::setOwner(UserIdentity *userIdentity)
 {
     fUserIdentity = userIdentity;
@@ -215,24 +270,6 @@ MessageThread *Mailbox::findMessageThread(const QString &channelId)
 void Mailbox::onNewCommits(const QString &startCommit, const QString &endCommit)
 {
     readMailDatabase();
-}
-
-QString Mailbox::pathForChannelId(const QString &threadId)
-{
-    QString path = threadId.left(2);
-    path += "/";
-    path += threadId.mid(2);
-    return path;
-}
-
-QString Mailbox::pathForMessagelId(const QString &threadPath, const QString &messageId)
-{
-    QString path = threadPath;
-    path += "/";
-    path = messageId.left(2);
-    path += "/";
-    path += messageId.mid(2);
-    return path;
 }
 
 WP::err Mailbox::readMailDatabase()

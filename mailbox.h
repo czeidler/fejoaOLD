@@ -39,6 +39,10 @@ public:
                              bool addUidToBaseDir = true);
     WP::err open(KeyStoreFinder *keyStoreFinder);
 
+    WP::err storeMessage(Message *message, MessageChannel *channel);
+    WP::err storeChannel(MessageChannel *channel);
+    WP::err storeChannelInfo(MessageChannel *channel, MessageChannelInfo *info);
+
     void setOwner(UserIdentity *userIdentity);
     UserIdentity *getOwner() const;
 
@@ -69,20 +73,23 @@ private:
     QStringList getChannelUids(QString path);
     QStringList getChannelUids();
 
-    QString pathForChannelId(const QString &threadId);
-    QString pathForMessagelId(const QString &threadPath, const QString &messageId);
-
     MessageChannel* readChannel(const QString &channelPath);
 
     WP::err readMailDatabase();
+    WP::err readThreadContent(const QString &channelPath, MessageThread *thread);
+
+    QStringList getUidFilePaths(QString path);
+    QStringList getUidDirPaths(QString path);
+    QString pathForMessageId(const QString &channelId, const QString &messageId);
+    QString pathForChannelId(const QString &channelId);
+    QString dirForChannelId(const QString &channelId);
+    QString makeUidPath(const QString &uid);
+    WP::err writeParcel(const QString &path, DataParcel *parcel);
 
     UserIdentity *fUserIdentity;
 
     MessageThreadDataModel fThreadList;
     MailboxMessageChannelFinder channelFinder;
-    WP::err readThreadContent(const QString &channelPath, MessageThread *thread);
-    QStringList getUidFilePaths(QString path);
-    QStringList getUidDirPaths(QString path);
 };
 
 
