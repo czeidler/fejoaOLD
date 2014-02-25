@@ -135,6 +135,31 @@ WP::err Mailbox::open(KeyStoreFinder *keyStoreFinder)
     return error;
 }
 
+WP::err Mailbox::storeMessage(Message *message)
+{
+    MessageChannel *channel = (MessageChannel*)message->getChannel();
+    MessageChannelInfo *info = message->getChannelInfo();
+
+    WP::err error = WP::kOk;
+    if (channel->isNewLocale()) {
+        Contact *myself = getOwner()->getMyself();
+        MessageChannel *targetMessageChannel = new MessageChannel(channel, myself,
+                                                                  myself->getKeys()->getMainKeyId());
+        error = storeChannel(targetMessageChannel);
+        delete targetMessageChannel;
+        if (error != WP::kOk)
+            return error;
+    }
+
+    if (info->isNewLocale()) {
+        error = storeChannelInfo(channel, info);
+        if (error != WP::kOk)
+            return error;
+    }
+
+    return storeMessage(message, channel);
+}
+
 WP::err Mailbox::storeChannel(MessageChannel *channel)
 {
     QString channelPath = pathForChannelId(channel->getUid());

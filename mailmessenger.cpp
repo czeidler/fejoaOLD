@@ -71,8 +71,6 @@ void MailMessenger::authConnected(WP::err error)
     if (((MessageChannel*)message->getChannel())->isNewLocale()) {
         targetMessageChannel = new MessageChannel((MessageChannel*)message->getChannel(), targetContact,
                                               targetContact->getKeys()->getMainKeyId());
-        message->setChannel(targetMessageChannel);
-        message->getChannelInfo()->setChannel(targetMessageChannel);
     }
 
     QByteArray data;
@@ -89,7 +87,7 @@ void MailMessenger::authConnected(WP::err error)
 
     // write new channel
     if (targetMessageChannel != NULL) {
-        error = XMLSecureParcel::write(&outStream, myself, signatureKeyId, message->getChannel(), "channel");
+        error = XMLSecureParcel::write(&outStream, myself, signatureKeyId, targetMessageChannel, "channel");
         if (error != WP::kOk) {
             emit sendResult(error);
             return;
@@ -116,8 +114,6 @@ void MailMessenger::authConnected(WP::err error)
 
     outStream.flush();
 
-    if (targetMessageChannel != NULL)
-        message->setChannel(NULL);
     delete targetMessageChannel;
 
     if (deleteMessageWhenDone)
@@ -200,6 +196,11 @@ WP::err MultiMailMessenger::postMessage(Message *message)
     delete this->message;
     this->message = message;
 
+    // store message
+    WP::err error = mailbox->storeMessage(message);
+    if (error != WP::kOk)
+        return error;
+
     messageChannelInfo = message->getChannelInfo();
 
     // TODO: try to get all participant uids first (if missing)
@@ -222,6 +223,9 @@ void MultiMailMessenger::onSendResult(WP::err error)
         return;
     }
     const MessageChannelInfo::Participant *participant = &messageChannelInfo->getParticipants().at(lastParticipantIndex);
+    Contact *myself = mailbox->getOwner()->getMyself();
+    if (participant->uid == myself->getUid())
+        onSendResult(WP::kOk);
 
     //mailMessenger->deleteLater();
     mailMessenger = new MailMessenger(mailbox, participant, profile);

@@ -39,9 +39,7 @@ public:
                              bool addUidToBaseDir = true);
     WP::err open(KeyStoreFinder *keyStoreFinder);
 
-    WP::err storeMessage(Message *message, MessageChannel *channel);
-    WP::err storeChannel(MessageChannel *channel);
-    WP::err storeChannelInfo(MessageChannel *channel, MessageChannelInfo *info);
+    WP::err storeMessage(Message *message);
 
     void setOwner(UserIdentity *userIdentity);
     UserIdentity *getOwner() const;
@@ -77,6 +75,10 @@ private:
 
     WP::err readMailDatabase();
     WP::err readThreadContent(const QString &channelPath, MessageThread *thread);
+
+    WP::err storeMessage(Message *message, MessageChannel *channel);
+    WP::err storeChannel(MessageChannel *channel);
+    WP::err storeChannelInfo(MessageChannel *channel, MessageChannelInfo *info);
 
     QStringList getUidFilePaths(QString path);
     QStringList getUidDirPaths(QString path);
