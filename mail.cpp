@@ -613,8 +613,9 @@ WP::err MessageChannelInfo::readParticipants(QDataStream &stream) {
         if (participant.address == "")
             return WP::kBadValue;
         participant.uid = readString(*stream.device());
-        if (participant.uid == "")
-            return WP::kBadValue;
+        // TODO: decide if the uid is mandatory
+        //if (participant.uid == "")
+        //    return WP::kBadValue;
         participants.append(participant);
     }
     return WP::kOk;

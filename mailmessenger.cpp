@@ -202,6 +202,8 @@ WP::err MultiMailMessenger::postMessage(Message *message)
 
     messageChannelInfo = message->getChannelInfo();
 
+    // TODO: try to get all participant uids first (if missing)
+
     onSendResult(WP::kOk);
 
     return WP::kOk;
