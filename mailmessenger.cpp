@@ -200,6 +200,9 @@ WP::err MultiMailMessenger::postMessage(Message *message)
     WP::err error = mailbox->storeMessage(message);
     if (error != WP::kOk)
         return error;
+    error = mailbox->getDatabase()->commit();
+    if (error != WP::kOk)
+        return error;
 
     messageChannelInfo = message->getChannelInfo();
 
@@ -224,8 +227,10 @@ void MultiMailMessenger::onSendResult(WP::err error)
     }
     const MessageChannelInfo::Participant *participant = &messageChannelInfo->getParticipants().at(lastParticipantIndex);
     Contact *myself = mailbox->getOwner()->getMyself();
-    if (participant->uid == myself->getUid())
+    if (participant->uid == myself->getUid()) {
         onSendResult(WP::kOk);
+        return;
+    }
 
     //mailMessenger->deleteLater();
     mailMessenger = new MailMessenger(mailbox, participant, profile);
