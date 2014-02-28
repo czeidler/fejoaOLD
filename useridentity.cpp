@@ -19,7 +19,7 @@ UserIdentity::UserIdentity(DatabaseBranch *branch, const QString &baseDir) :
 
 UserIdentity::~UserIdentity()
 {
-    delete fMyselfContact;
+    // myself is in the contact list so don't delete
     foreach (Contact *contact, fContacts)
         delete contact;
 }
@@ -79,6 +79,7 @@ WP::err UserIdentity::open(KeyStoreFinder *keyStoreFinder, MailboxFinder *mailbo
     error = fMyselfContact->open(keyStoreFinder);
     if (error != WP::kOk)
         return error;
+    fContacts.append(fMyselfContact);
 
     QStringList contactNames = listDirectories("contacts");
     foreach (const QString &contactName, contactNames) {
