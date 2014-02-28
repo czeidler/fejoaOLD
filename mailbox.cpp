@@ -58,7 +58,7 @@ int MessageListModel::getMessageCount() const
 void MessageListModel::addMessage(Message *messageRef)
 {
     int index = 0;
-    for (index; index < messages.count(); index++) {
+    for (; index < messages.count(); index++) {
         Message *current = messages.at(index);
         if (current->getTimestamp() > messageRef->getTimestamp())
             break;
@@ -168,16 +168,39 @@ WP::err Mailbox::storeChannel(MessageChannel *channel)
 
 WP::err Mailbox::storeChannelInfo(MessageChannel *channel, MessageChannelInfo *info)
 {
+    Contact *myself = fUserIdentity->getMyself();
+
+    /* The info uid is calculated from its data when calling toRawData. However, the uid is
+     * needed to determine the message path. For that reason we don't use writeParcel here.
+     */
+    QBuffer data;
+    data.open(QBuffer::WriteOnly);
+    WP::err error = info->toRawData(myself, myself->getKeys()->getMainKeyId(), data);
+    if (error != WP::kOk)
+        return error;
+
     QString channelInfoPath = dirForChannelId(channel->getUid());
     channelInfoPath += "/i/" + makeUidPath(info->getUid());
-    return writeParcel(channelInfoPath, info);
+    return write(channelInfoPath, data.buffer());
 }
 
 WP::err Mailbox::storeMessage(Message *message, MessageChannel *channel)
 {
+    Contact *myself = fUserIdentity->getMyself();
+
+    /* The message uid is calculated from its data when calling toRawData. However, the uid is
+     * needed to determine the message path. For that reason we don't use writeParcel here.
+     */
+    QBuffer data;
+    data.open(QBuffer::WriteOnly);
+    WP::err error = message->toRawData(myself, myself->getKeys()->getMainKeyId(), data);
+    if (error != WP::kOk)
+        return error;
+
     QString messagePath = pathForMessageId(channel->getUid(), message->getUid());
     messagePath += "/m";
-    return writeParcel(messagePath, message);
+
+    return write(messagePath, data.buffer());
 }
 
 QString Mailbox::pathForMessageId(const QString &channelId, const QString &messageId)
