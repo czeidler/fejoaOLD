@@ -694,59 +694,6 @@ WP::err GitInterface::commit()
 
     emit newCommits(oldCommit, getTip());
     return WP::kOk;
-
-   //git_reference* out;
-    //int result = git_reference_lookup(&out, fRepository, "refs/heads/master");
-    //git_reference_free(out);
-
-    /*int error;
-    git_revwalk *walk;
-    error = git_revwalk_new(&walk, fRepository);
-    error = git_revwalk_push_glob(walk, "refs/heads/master");
-    git_oid oid;
-    error = git_revwalk_next(&oid, walk);
-    git_commit *commit;
-    error = git_commit_lookup(&commit, fRepository, &oid);
-    printf("Name %s\n", git_commit_author(commit)->name);
-    git_commit_free(commit);
-    git_revwalk_free(walk);
-    */
-
-    /*
-    git_oid id;
-    git_oid_fromstr(&id, "229841ec03381379237658d8136a8342b7cd7c23");
-    git_reference *newRef;
-    int status = git_reference_create_oid(&newRef, fRepository, "refs/heads/test", &id, false);
-
-    git_strarray ref_list;
-     git_reference_list(&ref_list, fRepository, GIT_REF_LISTALL);
-
-      const char *refname;
-      git_reference *ref;
-      char out[41];
-      for (int i = 0; i < ref_list.count; ++i) {
-          refname = ref_list.strings[i];
-          git_reference_lookup(&ref, fRepository, refname);
-          if (ref == NULL)
-              continue;
-    switch (git_reference_type(ref)) {
-        case GIT_REF_OID:
-          git_oid_fmt(out, git_reference_oid(ref));
-          out[40] = '\0';
-          printf("%s [%s]\n", refname, out);
-          break;
-
-        case GIT_REF_SYMBOLIC:
-          printf("%s => %s\n", refname, git_reference_target(ref));
-          break;
-        default:
-          fprintf(stderr, "Unexpected reference type\n");
-          exit(1);
-      }
-      }
-
-      git_strarray_free(&ref_list);*/
-
 }
 
 WP::err GitInterface::read(const QString &path, QByteArray &data) const
