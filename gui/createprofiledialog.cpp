@@ -13,29 +13,29 @@
 CreateProfileDialog::CreateProfileDialog(Profile *profile, QWidget *parent) :
     QDialog(parent),
     ui(new Ui::CreateProfileDialog),
-    fProfile(profile)
+    profile(profile)
 {
     ui->setupUi(this);
 
-    fApplyButton = ui->buttonBox->button(QDialogButtonBox::Apply);
-    fApplyButton->setEnabled(false);
+    applyButton = ui->buttonBox->button(QDialogButtonBox::Apply);
+    applyButton->setEnabled(false);
 
-    fServerUserEdit = ui->serverUserEdit;
-    fServerEdit = ui->serverEdit;
-    fPasswordEdit1 = ui->passwordEdit1;
-    fPasswordEdit2 = ui->passwordEdit2;
-    fPasswordLabel2 = ui->passwordLabel2;
+    serverUserEdit = ui->serverUserEdit;
+    serverEdit = ui->serverEdit;
+    passwordEdit1 = ui->passwordEdit1;
+    passwordEdit2 = ui->passwordEdit2;
+    passwordLabel2 = ui->passwordLabel2;
 
-    connect(fServerUserEdit, SIGNAL(textChanged(QString)), this, SLOT(onTextChanged(QString)));
-    connect(fServerEdit, SIGNAL(textChanged(QString)), this, SLOT(onTextChanged(QString)));
-    connect(fPasswordEdit1, SIGNAL(textChanged(QString)), this, SLOT(onTextChanged(QString)));
-    connect(fPasswordEdit2, SIGNAL(textChanged(QString)), this, SLOT(onTextChanged(QString)));
+    connect(serverUserEdit, SIGNAL(textChanged(QString)), this, SLOT(onTextChanged(QString)));
+    connect(serverEdit, SIGNAL(textChanged(QString)), this, SLOT(onTextChanged(QString)));
+    connect(passwordEdit1, SIGNAL(textChanged(QString)), this, SLOT(onTextChanged(QString)));
+    connect(passwordEdit2, SIGNAL(textChanged(QString)), this, SLOT(onTextChanged(QString)));
 
-    connect(fApplyButton, SIGNAL(clicked()), this, SLOT(createProfile()));
+    connect(applyButton, SIGNAL(clicked()), this, SLOT(createProfile()));
 
     QPalette palette;
     palette.setColor(QPalette::WindowText, Qt::red);
-    fPasswordLabel2->setPalette(palette);
+    passwordLabel2->setPalette(palette);
 }
 
 CreateProfileDialog::~CreateProfileDialog()
@@ -45,54 +45,54 @@ CreateProfileDialog::~CreateProfileDialog()
 
 void CreateProfileDialog::onTextChanged(QString)
 {
-    fApplyButton->setEnabled(false);
-    if (fPasswordEdit1->text() != "") {
-        if (fPasswordEdit1->text() != fPasswordEdit2->text()) {
+    applyButton->setEnabled(false);
+    if (passwordEdit1->text() != "") {
+        if (passwordEdit1->text() != passwordEdit2->text()) {
             QPalette palette;
             palette.setColor(QPalette::WindowText, Qt::red);
-            fPasswordLabel2->setPalette(palette);
+            passwordLabel2->setPalette(palette);
             return;
         } else {
             QPalette palette;
             palette.setColor(QPalette::WindowText, Qt::green);
-            fPasswordLabel2->setPalette(palette);
+            passwordLabel2->setPalette(palette);
         }
     } else
         return;
 
-    if (fServerEdit->text() == "" || fServerUserEdit->text() == "")
+    if (serverEdit->text() == "" || serverUserEdit->text() == "")
         return;
 
-    fApplyButton->setEnabled(true);
+    applyButton->setEnabled(true);
 }
 
 void CreateProfileDialog::createProfile()
 {
-    SecureArray password = fPasswordEdit1->text().toLatin1();
-    QString serverUser = fServerUserEdit->text();
-    QString server = fServerEdit->text();
+    SecureArray password = passwordEdit1->text().toLatin1();
+    QString serverUser = serverUserEdit->text();
+    QString server = serverEdit->text();
 
     QString remoteUrl = "http://" + server + "/php_server/portal.php";
 
-    WP::err error = fProfile->createNewProfile(password);
+    WP::err error = profile->createNewProfile(password);
     if (error != WP::kOk) {
         QMessageBox::information(NULL, "Error", "Unable to create or load a profile!");
         exit(-1);
         return;
     }
-    RemoteDataStorage *remote = fProfile->addHTTPRemote(remoteUrl);
+    RemoteDataStorage *remote = profile->addHTTPRemote(remoteUrl);
     //RemoteDataStorage *remote = fProfile->addPHPRemote(remoteUrl);
-    UserIdentity *mainIdentity = fProfile->getIdentityList()->identityAt(0);
+    UserIdentity *mainIdentity = profile->getIdentityList()->identityAt(0);
     Contact *myself = mainIdentity->getMyself();
     myself->setServer(server);
     myself->setServerUser(serverUser);
     myself->writeConfig();
-    fProfile->setSignatureAuth(remote, myself->getUid(),
+    profile->setSignatureAuth(remote, myself->getUid(),
                                mainIdentity->getKeyStore()->getUid(),
                                myself->getKeys()->getMainKeyId(), myself->getServerUser());
 
-    fProfile->connectFreeBranches(remote);
-    fProfile->commit();
+    profile->connectFreeBranches(remote);
+    profile->commit();
 
     done(QDialog::Accepted);
 }

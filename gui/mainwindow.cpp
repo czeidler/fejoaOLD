@@ -8,7 +8,7 @@
 MainWindow::MainWindow(Profile *profile, QWidget *parent) :
     QMainWindow(parent),
     ui(new Ui::MainWindow),
-    fProfile(profile)
+    profile(profile)
 {
     ui->setupUi(this);
 
@@ -23,20 +23,20 @@ MainWindow::MainWindow(Profile *profile, QWidget *parent) :
     actionGroup->addAction(accountAction);
     actionGroup->addAction(messageAction);
 
-    fIdentityView = new UserIdentityView(fProfile->getIdentityList(), this);
-    fMessageView = new MessageView(fProfile, this);
-    Mailbox *mailbox = fProfile->getMailboxAt(0);
-    fMessageView->setMailbox(mailbox);
+    identityView = new UserIdentityView(profile->getIdentityList(), this);
+    messageView = new MessageView(profile, this);
+    Mailbox *mailbox = profile->getMailboxAt(0);
+    messageView->setMailbox(mailbox);
 
     ui->horizontalLayout->setMargin(0);
-    ui->stackedWidget->addWidget(fIdentityView);
-    ui->stackedWidget->addWidget(fMessageView);
+    ui->stackedWidget->addWidget(identityView);
+    ui->stackedWidget->addWidget(messageView);
 
     connect(accountAction, SIGNAL(toggled(bool)), this, SLOT(accountActionToggled(bool)));
     connect(messageAction, SIGNAL(toggled(bool)), this, SLOT(messageActionToggled(bool)));
 
-    fProgressBar = new QProgressBar(this);
-    statusBar()->addWidget(fProgressBar);
+    progressBar = new QProgressBar(this);
+    statusBar()->addWidget(progressBar);
 
     messageAction->setChecked(true);
 }
@@ -49,11 +49,11 @@ MainWindow::~MainWindow()
 void MainWindow::accountActionToggled(bool checked)
 {
     if (checked)
-        ui->stackedWidget->setCurrentWidget(fIdentityView);
+        ui->stackedWidget->setCurrentWidget(identityView);
 }
 
 void MainWindow::messageActionToggled(bool checked)
 {
     if (checked)
-        ui->stackedWidget->setCurrentWidget(fMessageView);
+        ui->stackedWidget->setCurrentWidget(messageView);
 }

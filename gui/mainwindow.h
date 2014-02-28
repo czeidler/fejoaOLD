@@ -25,10 +25,10 @@ public slots:
     void messageActionToggled(bool checked);
 private:
     Ui::MainWindow *ui;
-    QWidget *fIdentityView;
-    MessageView *fMessageView;
-    Profile *fProfile;
-    QProgressBar *fProgressBar;
+    QWidget *identityView;
+    MessageView *messageView;
+    Profile *profile;
+    QProgressBar *progressBar;
 };
 
 #endif // MAINWINDOW_H

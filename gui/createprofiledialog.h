@@ -27,14 +27,14 @@ private slots:
 private:
     Ui::CreateProfileDialog *ui;
 
-    Profile *fProfile;
+    Profile *profile;
 
-    QPushButton *fApplyButton;
-    QLineEdit *fServerUserEdit;
-    QLineEdit *fServerEdit;
-    QLineEdit *fPasswordEdit1;
-    QLineEdit *fPasswordEdit2;
-    QLabel *fPasswordLabel2;
+    QPushButton *applyButton;
+    QLineEdit *serverUserEdit;
+    QLineEdit *serverEdit;
+    QLineEdit *passwordEdit1;
+    QLineEdit *passwordEdit2;
+    QLabel *passwordLabel2;
 };
 
 #endif // CREATEPROFILEDIALOG_H
