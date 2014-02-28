@@ -23,11 +23,11 @@ public slots:
     void onIdentitySelected(QModelIndex index);
 
 private:
-    QListView* fIdentityList;
-    IdentityListModel *fIdentityListModel;
+    QListView* identityList;
+    IdentityListModel *identityListModel;
 
-    QStackedWidget *fDisplayStack;
-    UserIdentityDetailsView *fDetailView;
+    QStackedWidget *displayStack;
+    UserIdentityDetailsView *detailView;
 };
 
 #endif // USERIDENTITYVIEW_H

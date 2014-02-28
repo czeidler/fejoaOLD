@@ -18,60 +18,60 @@ public:
 
     void setTo(UserIdentity *identity);
 private:
-    UserIdentity *fIdentity;
-    QLineEdit *fServerUserName;
+    UserIdentity *identity;
+    QLineEdit *serverUserName;
 };
 
 UserIdentityDetailsView::UserIdentityDetailsView(QWidget *parent) :
     QWidget(parent),
-    fIdentity(NULL)
+    identity(NULL)
 {
-    fServerUserName = new QLineEdit(this);
+    serverUserName = new QLineEdit(this);
     QVBoxLayout* mainLayout = new QVBoxLayout(this);
 
-    mainLayout->addWidget(fServerUserName);
+    mainLayout->addWidget(serverUserName);
     mainLayout->addStretch();
 }
 
 void UserIdentityDetailsView::setTo(UserIdentity *identity)
 {
-    fIdentity = identity;
-    fServerUserName->setText(fIdentity->getMyself()->getServerUser());
+    this->identity = identity;
+    serverUserName->setText(identity->getMyself()->getServerUser());
 }
 
 UserIdentityView::UserIdentityView(IdentityListModel *listModel, QWidget *parent) :
     QSplitter(Qt::Horizontal, parent),
-    fIdentityListModel(listModel)
+    identityListModel(listModel)
 {
     // left identity list
     QWidget *identityListWidget = new QWidget(this);
     QVBoxLayout *identityListLayout = new QVBoxLayout();
     identityListWidget->setLayout(identityListLayout);
 
-    fIdentityList = new QListView(identityListWidget);
-    fIdentityList->setViewMode(QListView::ListMode);
-    fIdentityList->setModel(fIdentityListModel);
-    connect(fIdentityList, SIGNAL(activated(QModelIndex)), this, SLOT(onIdentitySelected(QModelIndex)));
+    identityList = new QListView(identityListWidget);
+    identityList->setViewMode(QListView::ListMode);
+    identityList->setModel(identityListModel);
+    connect(identityList, SIGNAL(activated(QModelIndex)), this, SLOT(onIdentitySelected(QModelIndex)));
 
-    identityListLayout->addWidget(fIdentityList);
+    identityListLayout->addWidget(identityList);
 
     // right side
-    fDisplayStack = new QStackedWidget(this);
-    fDetailView = new UserIdentityDetailsView(fDisplayStack);
-    fDisplayStack->addWidget(fDetailView);
+    displayStack = new QStackedWidget(this);
+    detailView = new UserIdentityDetailsView(displayStack);
+    displayStack->addWidget(detailView);
 
     addWidget(identityListWidget);
-    addWidget(fDisplayStack);
+    addWidget(displayStack);
 
-    if (fIdentityListModel->rowCount() > 0) {
-        fIdentityList->setCurrentIndex(fIdentityListModel->index(0));
-        onIdentitySelected(fIdentityListModel->index(0));
+    if (identityListModel->rowCount() > 0) {
+        identityList->setCurrentIndex(identityListModel->index(0));
+        onIdentitySelected(identityListModel->index(0));
     }
 }
 
 void UserIdentityView::onIdentitySelected(QModelIndex index)
 {
-    UserIdentity *identity = fIdentityListModel->identityAt(index.row());
-    fDetailView->setTo(identity);
+    UserIdentity *identity = identityListModel->identityAt(index.row());
+    detailView->setTo(identity);
 }
 
