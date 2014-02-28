@@ -12,13 +12,9 @@ MessageThread::MessageThread(MessageChannel *channel) :
 MessageThread::~MessageThread()
 {
     delete messages;
-    delete channel;
-
-    foreach (MessageChannelInfo *info, channelInfoList)
-        delete info;
 }
 
-MessageChannel *MessageThread::getMessageChannel() const
+MessageChannelRef MessageThread::getMessageChannel() const
 {
     return channel;
 }
@@ -28,17 +24,17 @@ MessageListModel &MessageThread::getMessages() const
     return *messages;
 }
 
-QList<MessageChannelInfo*> &MessageThread::getChannelInfos()
+QVector<MessageChannelInfoRef> &MessageThread::getChannelInfos()
 {
     return channelInfoList;
 }
 
-Message *MessageThread::getLastMessage() const
+MessageRef MessageThread::getLastMessage() const
 {
     return lastMessage;
 }
 
-void MessageThread::setLastMessage(Message *message)
+void MessageThread::setLastMessage(MessageRef message)
 {
     lastMessage = message;
 }
@@ -58,7 +54,7 @@ QVariant MessageThreadDataModel::data(const QModelIndex &index, int role) const
 
     MessageThread* thread = channels.at(index.row());
     if (thread->getChannelInfos().size() > 0) {
-        MessageChannelInfo *info = thread->getChannelInfos().at(0);
+        MessageChannelInfoRef info = thread->getChannelInfos().at(0);
         text += info->getSubject();
         if (text == "")
             text += " ";

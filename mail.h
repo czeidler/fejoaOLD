@@ -2,6 +2,7 @@
 #define MAIL_H
 
 #include <QBuffer>
+#include <QSharedPointer>
 
 #include "contact.h"
 #include "protocolparser.h"
@@ -58,6 +59,7 @@ protected:
 
 
 class SecureChannel;
+typedef QSharedPointer<SecureChannel> SecureChannelRef;
 
 
 class AbstractSecureDataParcel : public DataParcel {
@@ -77,10 +79,10 @@ private:
 class SecureChannelParcel : public AbstractSecureDataParcel {
 public:
     // outgoing
-    SecureChannelParcel(qint8 type, SecureChannel *channel = NULL);
+    SecureChannelParcel(qint8 type, SecureChannelRef channel = SecureChannelRef());
 
-    void setChannel(SecureChannel *channel);
-    SecureChannel *getChannel() const;
+    void setChannel(SecureChannelRef channel);
+    SecureChannelRef getChannel() const;
 
     time_t getTimestamp() const;
 
@@ -91,10 +93,10 @@ protected:
     virtual WP::err writeConfidentData(QDataStream &stream);
     virtual WP::err readConfidentData(QBuffer &mainData);
 
-    virtual SecureChannel *findChannel(const QString &channelUid) = 0;
+    virtual SecureChannelRef findChannel(const QString &channelUid) = 0;
 
 protected:
-    SecureChannel *channel;
+    SecureChannelRef channel;
 
 private:
     time_t timestamp;
@@ -105,7 +107,7 @@ class SecureChannel : public AbstractSecureDataParcel {
 public:
     /*! Use existing channel but use a a different receiver.
      */
-    SecureChannel(SecureChannel *channel, Contact *receiver, const QString &asymKeyId);
+    SecureChannel(SecureChannelRef channel, Contact *receiver, const QString &asymKeyId);
     // incoming
     SecureChannel(qint8 type, Contact *receiver);
     // outgoing
@@ -139,15 +141,21 @@ enum parcel_identifiers {
 };
 
 
+class Message;
 class MessageChannel;
 class MessageChannelInfo;
 class MessageParcel;
 
+typedef QSharedPointer<MessageChannel> MessageChannelRef;
+typedef QSharedPointer<MessageChannelInfo> MessageChannelInfoRef;
+typedef QSharedPointer<Message> MessageRef;
+
+
 class MessageChannelFinder {
 public:
     virtual ~MessageChannelFinder() {}
-    virtual MessageChannel *findChannel(const QString &channelUid) = 0;
-    virtual MessageChannelInfo *findChannelInfo(const QString &channelUid,
+    virtual MessageChannelRef findChannel(const QString &channelUid) = 0;
+    virtual MessageChannelInfoRef findChannelInfo(const QString &channelUid,
                                             const QString &channelInfoUid) = 0;
 };
 
@@ -155,8 +163,7 @@ public:
 class MessageChannelInfo : public SecureChannelParcel {
 public:
     MessageChannelInfo(MessageChannelFinder *channelFinder);
-    MessageChannelInfo(MessageChannel *channel);
-    ~MessageChannelInfo();
+    MessageChannelInfo(MessageChannelRef channel);
 
     void setSubject(const QString &subject);
     const QString &getSubject() const;
@@ -178,7 +185,7 @@ protected:
     virtual WP::err writeConfidentData(QDataStream &stream);
     virtual WP::err readConfidentData(QBuffer &mainData);
 
-    virtual SecureChannel *findChannel(const QString &channelUid);
+    virtual SecureChannelRef findChannel(const QString &channelUid);
 
 private:
     WP::err readParticipants(QDataStream &stream);
@@ -199,11 +206,11 @@ private:
 class MessageChannel : public SecureChannel {
 public:
     //! adapt channel for different receiver:
-    MessageChannel(MessageChannel *channel, Contact *receiver, const QString &asymKeyId);
+    MessageChannel(MessageChannelRef channel, Contact *receiver, const QString &asymKeyId);
     // incoming:
     MessageChannel(Contact *receiver);
     // outgoing:
-    MessageChannel(Contact *receiver, const QString &asymKeyId, MessageChannel *parentChannel = NULL);
+    MessageChannel(Contact *receiver, const QString &asymKeyId, MessageChannelRef parentChannel = MessageChannelRef());
 
     QString getParentChannelUid() const;
 
@@ -226,10 +233,10 @@ private:
 class Message : public SecureChannelParcel {
 public:
     Message(MessageChannelFinder *channelFinder);
-    Message(MessageChannelInfo *info);
+    Message(MessageChannelInfoRef info);
     ~Message();
 
-    MessageChannelInfo *getChannelInfo() const;
+    MessageChannelInfoRef getChannelInfo() const;
 
     const QByteArray& getBody() const;
     void setBody(const QByteArray &body);
@@ -238,11 +245,11 @@ protected:
     virtual WP::err writeConfidentData(QDataStream &stream);
     virtual WP::err readConfidentData(QBuffer &mainData);
 
-    virtual SecureChannel *findChannel(const QString &channelUid);
+    virtual SecureChannelRef findChannel(const QString &channelUid);
 
 private:
     QByteArray body;
-    MessageChannelInfo *channelInfo;
+    MessageChannelInfoRef channelInfo;
     MessageChannelFinder *channelFinder;
 };
 

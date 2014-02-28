@@ -41,8 +41,8 @@ void NewMessageView::onSendButtonClicked()
 
     Contact *mySelf = mailbox->getOwner()->getMyself();
 
-    MessageChannel *channel = new MessageChannel(NULL, "");
-    MessageChannelInfo *channelInfo = new MessageChannelInfo(channel);
+    MessageChannelRef channel(new MessageChannel(NULL, ""));
+    MessageChannelInfoRef channelInfo(new MessageChannelInfo(channel));
 
     channelInfo->addParticipant(mySelf->getAddress(), mySelf->getUid());
     if (mySelf->getAddress() != address)
@@ -53,7 +53,7 @@ void NewMessageView::onSendButtonClicked()
     QString body = messageComposer->toPlainText();
     MultiMailMessenger *messenger = new MultiMailMessenger(mailbox, profile);
 
-    Message *message = new Message(channelInfo);
+    MessageRef message(new Message(channelInfo));
     message->setBody(body.toLatin1());
     messenger->postMessage(message);
 

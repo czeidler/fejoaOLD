@@ -18,14 +18,14 @@ public:
     int rowCount(const QModelIndex & parent = QModelIndex()) const;
 
     int getMessageCount() const;
-    void addMessage(Message *message);
-    bool removeMessage(Message *message);
-    Message *removeMessageAt(int index);
-    Message *messageAt(int index);
+    void addMessage(MessageRef message);
+    bool removeMessage(MessageRef message);
+    MessageRef removeMessageAt(int index);
+    MessageRef messageAt(int index);
 
     void clear();
 private:
-    QList<Message*> messages;
+    QVector<MessageRef> messages;
 };
 
 class Mailbox : public EncryptedUserData
@@ -39,7 +39,7 @@ public:
                              bool addUidToBaseDir = true);
     WP::err open(KeyStoreFinder *keyStoreFinder);
 
-    WP::err storeMessage(Message *message);
+    WP::err storeMessage(MessageRef message);
 
     void setOwner(UserIdentity *userIdentity);
     UserIdentity *getOwner() const;
@@ -60,8 +60,8 @@ private:
     class MailboxMessageChannelFinder : public MessageChannelFinder {
     public:
         MailboxMessageChannelFinder(MessageThreadDataModel *threads);
-        virtual MessageChannel *findChannel(const QString &channelUid);
-        virtual MessageChannelInfo *findChannelInfo(const QString &channelUid,
+        virtual MessageChannelRef findChannel(const QString &channelUid);
+        virtual MessageChannelInfoRef findChannelInfo(const QString &channelUid,
                                                     const QString &channelInfoUid);
 
     private:
@@ -76,9 +76,9 @@ private:
     WP::err readMailDatabase();
     WP::err readThreadContent(const QString &channelPath, MessageThread *thread);
 
-    WP::err storeMessage(Message *message, MessageChannel *channel);
-    WP::err storeChannel(MessageChannel *channel);
-    WP::err storeChannelInfo(MessageChannel *channel, MessageChannelInfo *info);
+    WP::err storeMessage(MessageRef message, MessageChannelRef channel);
+    WP::err storeChannel(MessageChannelRef channel);
+    WP::err storeChannelInfo(MessageChannelRef channel, MessageChannelInfoRef info);
 
     QStringList getUidFilePaths(QString path);
     QStringList getUidDirPaths(QString path);

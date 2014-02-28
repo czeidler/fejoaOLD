@@ -15,7 +15,7 @@ public:
     MailMessenger(Mailbox *mailbox, const MessageChannelInfo::Participant *receiver, Profile *profile);
     ~MailMessenger();
 
-    WP::err postMessage(Message *message, bool deleteWhenDone = true);
+    WP::err postMessage(MessageRef message);
 
 signals:
     void sendResult(WP::err error);
@@ -40,8 +40,7 @@ private:
 
     ContactRequest* contactRequest;
 
-    Message *message;
-    bool deleteMessageWhenDone;
+    MessageRef message;
 
     RemoteConnection *remoteConnection;
     RemoteConnectionReply *serverReply;
@@ -55,7 +54,7 @@ public:
     MultiMailMessenger(Mailbox *mailbox, Profile *profile);
     ~MultiMailMessenger();
 
-    WP::err postMessage(Message *message);
+    WP::err postMessage(MessageRef message);
 
 signals:
     void messagesSent();
@@ -65,10 +64,10 @@ private slots:
 
 private:
     MailMessenger *mailMessenger;
-    Message *message;
+    MessageRef message;
 
     Mailbox *mailbox;
-    MessageChannelInfo *messageChannelInfo;
+    MessageChannelInfoRef messageChannelInfo;
     Profile *profile;
 
     int lastParticipantIndex;

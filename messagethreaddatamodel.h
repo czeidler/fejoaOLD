@@ -4,9 +4,8 @@
 #include <QAbstractListModel>
 #include <QList>
 
-class Message;
-class MessageChannel;
-class MessageChannelInfo;
+#include "mail.h"
+
 class MessageListModel;
 
 
@@ -15,18 +14,18 @@ public:
     MessageThread(MessageChannel *channel);
     ~MessageThread();
 
-    MessageChannel *getMessageChannel() const;
+    MessageChannelRef getMessageChannel() const;
     MessageListModel &getMessages() const;
-    QList<MessageChannelInfo *> &getChannelInfos();
+    QVector<MessageChannelInfoRef> &getChannelInfos();
 
-    Message *getLastMessage() const;
-    void setLastMessage(Message *message);
+    MessageRef getLastMessage() const;
+    void setLastMessage(MessageRef message);
 
 private:
-    MessageChannel *channel;
+    MessageChannelRef channel;
     MessageListModel *messages;
-    QList<MessageChannelInfo*> channelInfoList;
-    Message *lastMessage;
+    QVector<MessageChannelInfoRef> channelInfoList;
+    MessageRef lastMessage;
 };
 
 class MessageThreadDataModel : public QAbstractListModel {

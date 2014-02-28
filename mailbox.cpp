@@ -31,7 +31,7 @@ MessageListModel::data(const QModelIndex &index, int role) const
     if (role != Qt::DisplayRole)
         return QVariant();
 
-    Message *message = messages.at(index.row());
+    MessageRef message = messages.at(index.row());
     QDateTime time;
     time.setTime_t(message->getTimestamp());
 
@@ -55,11 +55,11 @@ int MessageListModel::getMessageCount() const
     return messages.count();
 }
 
-void MessageListModel::addMessage(Message *messageRef)
+void MessageListModel::addMessage(MessageRef messageRef)
 {
     int index = 0;
     for (; index < messages.count(); index++) {
-        Message *current = messages.at(index);
+        MessageRef current = messages.at(index);
         if (current->getTimestamp() > messageRef->getTimestamp())
             break;
     }
@@ -69,7 +69,7 @@ void MessageListModel::addMessage(Message *messageRef)
     endInsertRows();
 }
 
-bool MessageListModel::removeMessage(Message *message)
+bool MessageListModel::removeMessage(MessageRef message)
 {
     int index = messages.indexOf(message);
     if (index < 0)
@@ -78,25 +78,23 @@ bool MessageListModel::removeMessage(Message *message)
     return true;
 }
 
-Message *MessageListModel::removeMessageAt(int index)
+MessageRef MessageListModel::removeMessageAt(int index)
 {
-    Message *entry = messages.at(index);
+    MessageRef entry = messages.at(index);
     beginRemoveRows(QModelIndex(), index, index);
-    messages.removeAt(index);
+    messages.remove(index);
     endRemoveRows();
     return entry;
 }
 
-Message *MessageListModel::messageAt(int index)
+MessageRef MessageListModel::messageAt(int index)
 {
-    return messages.at(index);
+    return messages[index];
 }
 
 void MessageListModel::clear()
 {
     beginRemoveRows(QModelIndex(), 0, messages.count() - 1);
-    foreach (Message *ref, messages)
-        delete ref;
     messages.clear();
     endRemoveRows();
 }
@@ -135,18 +133,17 @@ WP::err Mailbox::open(KeyStoreFinder *keyStoreFinder)
     return error;
 }
 
-WP::err Mailbox::storeMessage(Message *message)
+WP::err Mailbox::storeMessage(MessageRef message)
 {
-    MessageChannel *channel = (MessageChannel*)message->getChannel();
-    MessageChannelInfo *info = message->getChannelInfo();
+    MessageChannelRef channel = message->getChannel().staticCast<MessageChannel>();
+    MessageChannelInfoRef info = message->getChannelInfo().staticCast<MessageChannelInfo>();
 
     WP::err error = WP::kOk;
     if (channel->isNewLocale()) {
         Contact *myself = getOwner()->getMyself();
-        MessageChannel *targetMessageChannel = new MessageChannel(channel, myself,
-                                                                  myself->getKeys()->getMainKeyId());
+        MessageChannelRef targetMessageChannel(new MessageChannel(channel, myself,
+                                                                  myself->getKeys()->getMainKeyId()));
         error = storeChannel(targetMessageChannel);
-        delete targetMessageChannel;
         if (error != WP::kOk)
             return error;
     }
@@ -160,13 +157,13 @@ WP::err Mailbox::storeMessage(Message *message)
     return storeMessage(message, channel);
 }
 
-WP::err Mailbox::storeChannel(MessageChannel *channel)
+WP::err Mailbox::storeChannel(MessageChannelRef channel)
 {
     QString channelPath = pathForChannelId(channel->getUid());
-    return writeParcel(channelPath, channel);
+    return writeParcel(channelPath, channel.data());
 }
 
-WP::err Mailbox::storeChannelInfo(MessageChannel *channel, MessageChannelInfo *info)
+WP::err Mailbox::storeChannelInfo(MessageChannelRef channel, MessageChannelInfoRef info)
 {
     Contact *myself = fUserIdentity->getMyself();
 
@@ -184,7 +181,7 @@ WP::err Mailbox::storeChannelInfo(MessageChannel *channel, MessageChannelInfo *i
     return write(channelInfoPath, data.buffer());
 }
 
-WP::err Mailbox::storeMessage(Message *message, MessageChannel *channel)
+WP::err Mailbox::storeMessage(MessageRef message, MessageChannelRef channel)
 {
     Contact *myself = fUserIdentity->getMyself();
 
@@ -347,7 +344,7 @@ WP::err Mailbox::readMailDatabase()
 WP::err Mailbox::readThreadContent(const QString &channelPath, MessageThread *thread)
 {
     MessageListModel &messages = thread->getMessages();
-    QList<MessageChannelInfo*> &infos = thread->getChannelInfos();
+    QVector<MessageChannelInfoRef> &infos = thread->getChannelInfos();
 
     QStringList infoUidPaths = getUidFilePaths(channelPath + "/i");
     for (int i = 0; i < infoUidPaths.count(); i++) {
@@ -358,16 +355,15 @@ WP::err Mailbox::readThreadContent(const QString &channelPath, MessageThread *th
             return error;
 
         // read channel info
-        MessageChannelInfo *info = new MessageChannelInfo(&channelFinder);
+        MessageChannelInfoRef info(new MessageChannelInfo(&channelFinder));
         error = info->fromRawData(fUserIdentity->getContactFinder(), data);
         if (error == WP::kOk) {
             infos.append(info);
             continue;
         }
-        delete info;
     }
 
-    Message *lastMessage = NULL;
+    MessageRef lastMessage;
 
     QStringList messageUidPaths = getUidDirPaths(channelPath);
     for (int i = 0; i < messageUidPaths.count(); i++) {
@@ -379,7 +375,7 @@ WP::err Mailbox::readThreadContent(const QString &channelPath, MessageThread *th
             return error;
 
         // read message
-        Message *message = new Message(&channelFinder);
+        MessageRef message(new Message(&channelFinder));
         error = message->fromRawData(fUserIdentity->getContactFinder(), data);
         if (error == WP::kOk) {
             messages.addMessage(message);
@@ -387,7 +383,6 @@ WP::err Mailbox::readThreadContent(const QString &channelPath, MessageThread *th
                 lastMessage = message;
             continue;
         }
-        delete message;
     }
 
     thread->setLastMessage(lastMessage);
@@ -421,15 +416,15 @@ Mailbox::MailboxMessageChannelFinder::MailboxMessageChannelFinder(MessageThreadD
 
 }
 
-MessageChannel *Mailbox::MailboxMessageChannelFinder::findChannel(const QString &channelUid)
+MessageChannelRef Mailbox::MailboxMessageChannelFinder::findChannel(const QString &channelUid)
 {
     MessageThread *thread = threads->findChannel(channelUid);
     if (thread == NULL)
-        return NULL;
+        return MessageChannelRef();
     return thread->getMessageChannel();
 }
 
-MessageChannelInfo *Mailbox::MailboxMessageChannelFinder::findChannelInfo(const QString &channelUid,
+MessageChannelInfoRef Mailbox::MailboxMessageChannelFinder::findChannelInfo(const QString &channelUid,
                                                                           const QString &channelInfoUid)
 {
     MessageThread *messageThread = NULL;
@@ -441,12 +436,12 @@ MessageChannelInfo *Mailbox::MailboxMessageChannelFinder::findChannelInfo(const 
         }
     }
     if (messageThread == NULL)
-        return NULL;
+        return MessageChannelInfoRef();
 
-    QList<MessageChannelInfo*>& channelInfos = messageThread->getChannelInfos();
-    foreach (MessageChannelInfo* channelInfo, channelInfos) {
+    QVector<MessageChannelInfoRef> &channelInfos = messageThread->getChannelInfos();
+    foreach (MessageChannelInfoRef channelInfo, channelInfos) {
         if (channelInfo->getUid() == channelInfoUid)
             return channelInfo;
     }
-    return NULL;
+    return MessageChannelInfoRef();
 }

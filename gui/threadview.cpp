@@ -53,7 +53,7 @@ void ThreadView::setMessageThread(MessageThread *thread)
     if (messageThread->getChannelInfos().size() == 0)
         return;
 
-    MessageChannelInfo *info = messageThread->getChannelInfos().at(0);
+    MessageChannelInfoRef info = messageThread->getChannelInfos().at(0);
 
     subjectLabel->setText("Subject: " + info->getSubject());
 
@@ -75,9 +75,9 @@ void ThreadView::onSendButtonClicked()
     if (messageThread->getChannelInfos().size() == 0)
         return;
 
-    MessageChannelInfo *info = messageThread->getChannelInfos().at(0);
+    MessageChannelInfoRef info = messageThread->getChannelInfos().at(0);
 
-    Message *message = new Message(info);
+    MessageRef message(new Message(info));
     QString body = messageComposer->toPlainText();
     message->setBody(body.toLatin1());
 
