@@ -2,7 +2,7 @@
 #define THREADVIEW_H
 
 #include <QPushButton>
-#include <QLineEdit>
+#include <QLabel>
 #include <QListView>
 #include <QSplitter>
 #include <QTextEdit>
@@ -30,7 +30,8 @@ private slots:
 
 private:
     QListView *messageDisplay;
-    QLineEdit *receiver;
+    QLabel *subjectLabel;
+    QLabel *participantsLabel;
     QTextEdit *messageComposer;
     QPushButton *sendButton;
 
