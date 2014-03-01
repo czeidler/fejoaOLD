@@ -53,6 +53,7 @@ WP::err UserIdentity::createNewIdentity(KeyStore *keyStore, const QString &defau
     error = myselfContact->createUserIdentityContact(keyStore, keyId);
     if (error != WP::kOk)
         return error;
+    contactList.append(myselfContact);
 
     error = write(kPathMailboxId, mailbox->getUid());
     if (error != WP::kOk)
