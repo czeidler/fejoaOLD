@@ -235,6 +235,8 @@ WP::err Profile::createNewUserIdentity(DatabaseBranch *branch, Mailbox *mailbox,
     error = addUserIdentity(identity);
     if (error != WP::kOk)
         return error;
+    mailbox->setOwner(identity);
+
     *userIdentityOut = identity;
     return WP::kOk;
 }
