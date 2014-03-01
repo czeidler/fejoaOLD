@@ -33,10 +33,10 @@ private:
     void makeRequest(QByteArray &data, Contact *myself);
 
 private:
-    RemoteConnection *fConnection;
-    QString fServerUser;
-    UserIdentity *fUserIdentity;
-    RemoteConnectionReply *fServerReply;
+    RemoteConnection *connection;
+    QString serverUser;
+    UserIdentity *userIdentity;
+    RemoteConnectionReply *serverReply;
 
 };
 

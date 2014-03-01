@@ -51,7 +51,7 @@ public:
 
 private:
     class Private;
-    Private* fPrivate;
+    Private* p;
 };
 
 

@@ -35,8 +35,8 @@ public:
 
     QStringList listDirectories(const QString &path) const;
 protected:
-    EncryptedUserData *fDatabase;
-    QString fDirectory;
+    EncryptedUserData *database;
+    QString directory;
 };
 
 
@@ -46,10 +46,10 @@ class RemoteAuthentication;
 
 class DatabaseBranch {
 public:
-    DatabaseBranch(const QString &getDatabasePath, const QString &getBranch);
+    DatabaseBranch(const QString &databasePath, const QString &getBranch);
     ~DatabaseBranch();
 
-    void setTo(const QString &getDatabasePath, const QString &getBranch);
+    void setTo(const QString &databasePath, const QString &getBranch);
     const QString &getDatabasePath() const;
     const QString &getBranch() const;
     QString databaseHash() const;
@@ -62,10 +62,10 @@ public:
     RemoteAuthentication *getRemoteAuthAt(int i) const;
     WP::err addRemote(RemoteDataStorage* data);
 private:
-    QString fDatabasePath;
-    QString fBranch;
-    QList<RemoteDataStorage*> fRemotes;
-    DatabaseInterface *fDatabase;
+    QString databasePath;
+    QString branch;
+    QList<RemoteDataStorage*> remotes;
+    DatabaseInterface *database;
 };
 
 
@@ -104,14 +104,14 @@ protected:
     QString prependBaseDir(const QString &path) const;
 
 protected:
-    DatabaseBranch *fDatabaseBranch;
-    QString fDatabaseBaseDir;
+    DatabaseBranch *databaseBranch;
+    QString databaseBaseDir;
 
-    CryptoInterface *fCrypto;
-    DatabaseInterface *fDatabase;
+    CryptoInterface *crypto;
+    DatabaseInterface *database;
 
 private:
-    QString fUid;
+    QString uid;
 };
 
 class KeyStore : public UserData {
@@ -135,8 +135,8 @@ public:
     DatabaseInterface* getDatabaseInterface();
 
 protected:
-    SecureArray fMasterKey;
-    QByteArray fMasterKeyIV;
+    SecureArray masterKey;
+    QByteArray masterKeyIV;
 };
 
 class KeyStoreFinder {
@@ -175,8 +175,8 @@ protected:
     virtual WP::err create(const QString &uid, KeyStore *keyStore, const QString defaultKeyId,
                            bool addUidToBaseDir);
 
-    KeyStore *fKeyStore;
-    QString fDefaultKeyId;
+    KeyStore *keyStore;
+    QString defaultKeyId;
 };
 
 #endif // DATABASEUTIL_H

@@ -23,17 +23,17 @@ QString readPassword() {
 MainApplication::MainApplication(int &argc, char *argv[]) :
     QApplication(argc, argv)
 {
-    fNetworkAccessManager = new QNetworkAccessManager(this);
-    fNetworkAccessManager->setCookieJar(new QNetworkCookieJar(this));
+    networkAccessManager = new QNetworkAccessManager(this);
+    networkAccessManager->setCookieJar(new QNetworkCookieJar(this));
 
-    fProfile = new Profile(".git", "profile");
+    profile = new Profile(".git", "profile");
 
     // convenient hack
     QString password = readPassword();
 
     WP::err error = WP::kBadKey;
     while (true) {
-        error = fProfile->open(password.toLatin1());
+        error = profile->open(password.toLatin1());
         if (error != WP::kBadKey)
             break;
 
@@ -47,7 +47,7 @@ MainApplication::MainApplication(int &argc, char *argv[]) :
     }
 
     if (error != WP::kOk) {
-        CreateProfileDialog createDialog(fProfile);
+        CreateProfileDialog createDialog(profile);
         int result = createDialog.exec();
         if (result != QDialog::Accepted) {
             exit(-1);
@@ -56,14 +56,14 @@ MainApplication::MainApplication(int &argc, char *argv[]) :
     }
 
     DatabaseBranch *branch = NULL;
-    QList<DatabaseBranch*> &branches = fProfile->getBranches();
+    QList<DatabaseBranch*> &branches = profile->getBranches();
     SyncManager *syncManager = new SyncManager(branches.at(0)->getRemoteAt(0));
     foreach (branch, branches)
         syncManager->keepSynced(branch->getDatabase());
     syncManager->startWatching();
 
-    fMainWindow = new MainWindow(fProfile);
-    fMainWindow->show();
+    mainWindow = new MainWindow(profile);
+    mainWindow->show();
 
     /*
     MessageReceiver receiver(&gitInterface);
@@ -77,12 +77,12 @@ MainApplication::MainApplication(int &argc, char *argv[]) :
 
 MainApplication::~MainApplication()
 {
-    delete fMainWindow;
-    delete fProfile;
+    delete mainWindow;
+    delete profile;
     CryptoInterfaceSingleton::destroy();
 }
 
 QNetworkAccessManager *MainApplication::getNetworkAccessManager()
 {
-    return fNetworkAccessManager;
+    return networkAccessManager;
 }

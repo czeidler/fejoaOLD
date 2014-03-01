@@ -4,36 +4,35 @@
 Contact::Contact(const QString &uid, const QString &keyId,
                  const QString &certificate, const QString &publicKey) :
     StorageDirectory(NULL, ""),
-    fPrivateKeyStore(false)
+    privateKeyStore(false),
+    uid(uid)
 {
-    fUid = uid;
-
-    fKeys = new ContactKeysBuddies(NULL, "");
-    fKeys->addKeySet(keyId, certificate, publicKey);
-    fKeys->setMainKeyId(keyId);
+    keys = new ContactKeysBuddies(NULL, "");
+    keys->addKeySet(keyId, certificate, publicKey);
+    keys->setMainKeyId(keyId);
 }
 
 Contact::Contact(EncryptedUserData *database, const QString &directory) :
     StorageDirectory(database, directory),
-    fPrivateKeyStore(false),
-    fKeys(NULL)
+    privateKeyStore(false),
+    keys(NULL)
 {
 
 }
 
 Contact::~Contact()
 {
-    delete fKeys;
+    delete keys;
 }
 
 WP::err Contact::createUserIdentityContact(KeyStore *keyStore, const QString &keyId)
 {
-    fUid = keyId;
+    uid = keyId;
 
-    fPrivateKeyStore = true;
+    privateKeyStore = true;
 
-    fKeys = new ContactKeysKeyStore(fDatabase, fDirectory + "/keys", keyStore);
-    fKeys->addKeySet(keyId, true);
+    keys = new ContactKeysKeyStore(database, directory + "/keys", keyStore);
+    keys->addKeySet(keyId, true);
 
     return writeConfig();
 }
@@ -44,16 +43,16 @@ WP::err Contact::open(KeyStoreFinder *keyStoreFinder)
     QString type;
     WP::err error = read("keystore_type", type);
     if (error == WP::kOk && type == "private") {
-        fPrivateKeyStore = true;
-        fKeys = new ContactKeysKeyStore(fDatabase, getKeysDirectory(), fDatabase->getKeyStore());
+        privateKeyStore = true;
+        keys = new ContactKeysKeyStore(database, getKeysDirectory(), database->getKeyStore());
     } else
-        fKeys = new ContactKeysBuddies(fDatabase, getKeysDirectory());
+        keys = new ContactKeysBuddies(database, getKeysDirectory());
 
-    error = fKeys->open();
+    error = keys->open();
     if (error != WP::kOk)
         return error;
 
-    error = read("uid", fUid);
+    error = read("uid", uid);
     if (error != WP::kOk)
         return error;
 
@@ -93,54 +92,54 @@ bool Contact::verify(const QString &keyId, const QByteArray &data, const QByteAr
 
 QString Contact::getUid() const
 {
-    return fUid;
+    return uid;
 }
 
 ContactKeys *Contact::getKeys()
 {
-    return fKeys;
+    return keys;
 }
 
 const QString Contact::getAddress() const
 {
-    return fServerUser + "@" + fServer;
+    return serverUser + "@" + server;
 }
 
 const QString &Contact::getServerUser() const
 {
-    return fServerUser;
+    return serverUser;
 }
 
 const QString &Contact::getServer() const
 {
-    return fServer;
+    return server;
 }
 
 void Contact::setServerUser(const QString &serverUser)
 {
-    fServerUser = serverUser;
+    this->serverUser = serverUser;
 }
 
 void Contact::setServer(const QString &server)
 {
-    fServer = server;
+    this->server = server;
 }
 
 WP::err Contact::writeConfig()
 {
     WP::err error = WP::kOk;
-    if (fPrivateKeyStore) {
-        fPrivateKeyStore = true;
+    if (privateKeyStore) {
+        privateKeyStore = true;
         error = write("keystore_type", QString("private"));
         if (error != WP::kOk)
             return error;
     }
-    fKeys->setTo(fDatabase, getKeysDirectory());
-    error = fKeys->writeConfig();
+    keys->setTo(database, getKeysDirectory());
+    error = keys->writeConfig();
     if (error != WP::kOk)
         return error;
 
-    error = write("uid", fUid);
+    error = write("uid", uid);
     if (error != WP::kOk)
         return error;
 
@@ -166,7 +165,7 @@ bool Contact::setAddress(const QString &address)
 
 QString Contact::getKeysDirectory() const
 {
-    return fDirectory + "/keys";
+    return directory + "/keys";
 }
 
 ContactKeys::ContactKeys(EncryptedUserData *database, const QString &directory) :
@@ -177,22 +176,22 @@ ContactKeys::ContactKeys(EncryptedUserData *database, const QString &directory) 
 
 const QString ContactKeys::getMainKeyId() const
 {
-    return fMainKeyId;
+    return mainKeyId;
 }
 
 WP::err ContactKeys::setMainKeyId(const QString &keyId)
 {
-    fMainKeyId = keyId;
+    this->mainKeyId = keyId;
 }
 
 WP::err ContactKeys::open()
 {
-    return read("main_key_id", fMainKeyId);
+    return read("main_key_id", mainKeyId);
 }
 
 WP::err ContactKeys::writeConfig()
 {
-    return write("main_key_id", fMainKeyId);
+    return write("main_key_id", mainKeyId);
 }
 
 KeyStore *ContactKeys::getKeyStore()
@@ -204,16 +203,16 @@ KeyStore *ContactKeys::getKeyStore()
 ContactKeysKeyStore::ContactKeysKeyStore(EncryptedUserData *database, const QString &directory,
                                          KeyStore *keyStore) :
     ContactKeys(database, directory),
-    fKeyStore(keyStore)
+    keyStore(keyStore)
 {
 
 }
 
 WP::err ContactKeysKeyStore::writeConfig()
 {
-    QString keyStoreId = fDatabase->getKeyStore()->getUid();
+    QString keyStoreId = database->getKeyStore()->getUid();
     WP::err error = WP::kOk;
-    foreach (const QString &keyId, fKeyIdList) {
+    foreach (const QString &keyId, keyIdList) {
         error = write(keyId + "/keystore", keyStoreId);
         if (error != WP::kOk)
             return error;
@@ -228,16 +227,16 @@ WP::err ContactKeysKeyStore::open()
     if (error != WP::kOk)
         return error;
 
-    fKeyIdList = listDirectories("");
+    keyIdList = listDirectories("");
     return error;
 }
 
 WP::err ContactKeysKeyStore::getKeySet(const QString &keyId, QString &certificate,
                                        QString &publicKey, QString &privateKey) const
 {
-    if (!fKeyIdList.contains(keyId))
+    if (!keyIdList.contains(keyId))
         return WP::kEntryNotFound;
-    return fKeyStore->readAsymmetricKey(keyId, certificate, publicKey, privateKey);
+    return keyStore->readAsymmetricKey(keyId, certificate, publicKey, privateKey);
 }
 
 WP::err ContactKeysKeyStore::addKeySet(const QString &keyId, bool setAsMainKey)
@@ -246,11 +245,11 @@ WP::err ContactKeysKeyStore::addKeySet(const QString &keyId, bool setAsMainKey)
     QString certificate;
     QString publicKey;
     QString privateKey;
-    WP::err error = fKeyStore->readAsymmetricKey(keyId, certificate, publicKey,
+    WP::err error = keyStore->readAsymmetricKey(keyId, certificate, publicKey,
                                                                 privateKey);
     if (error != WP::kOk)
         return error;
-    fKeyIdList.append(keyId);
+    keyIdList.append(keyId);
     if (setAsMainKey)
         setMainKeyId(keyId);
     return WP::kOk;
@@ -271,7 +270,7 @@ WP::err ContactKeysKeyStore::addKeySet(const QString &keyId, const QString &cert
 
 KeyStore *ContactKeysKeyStore::getKeyStore()
 {
-    return fKeyStore;
+    return keyStore;
 }
 
 
@@ -284,7 +283,7 @@ WP::err ContactKeysBuddies::writeConfig()
 {
     WP::err error = WP::kOk;
     QMap<QString, PublicKeySet>::iterator it;
-    for (it = fKeyMap.begin(); it != fKeyMap.end(); it++) {
+    for (it = keyMap.begin(); it != keyMap.end(); it++) {
         QString keyId = it.key();
         error = write(keyId + "/certificate", it.value().certificate);
         if (error != WP::kOk)
@@ -313,7 +312,7 @@ WP::err ContactKeysBuddies::open()
         error = read(keyId + "/public_key", keySet.publicKey);
         if (error != WP::kOk)
             return error;
-        fKeyMap[keyId] = keySet;
+        keyMap[keyId] = keySet;
     }
 
     return error;
@@ -333,8 +332,8 @@ WP::err ContactKeysBuddies::addKeySet(const QString &keyId, bool setAsMainKey)
 WP::err ContactKeysBuddies::getKeySet(const QString &keyId, QString &certificate,
                                       QString &publicKey) const
 {
-    QMap<QString, PublicKeySet>::const_iterator it = fKeyMap.find(keyId);
-    if (it == fKeyMap.end())
+    QMap<QString, PublicKeySet>::const_iterator it = keyMap.find(keyId);
+    if (it == keyMap.end())
         return WP::kEntryNotFound;
 
     certificate = it.value().certificate;
@@ -349,6 +348,6 @@ WP::err ContactKeysBuddies::addKeySet(const QString &keyId, const QString &certi
     keySet.certificate = certificate;
     keySet.publicKey = publicKey;
 
-    fKeyMap[keyId] = keySet;
+    keyMap[keyId] = keySet;
     return WP::kOk;
 }

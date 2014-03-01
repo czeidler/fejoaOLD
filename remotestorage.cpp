@@ -4,105 +4,104 @@
 
 
 RemoteDataStorage::RemoteDataStorage(Profile *profile) :
-    fProfile(profile),
-    fConnection(NULL),
-    fAuthentication(NULL)
+    profile(profile),
+    connection(NULL),
+    authentication(NULL)
 {
 }
 
 RemoteDataStorage::~RemoteDataStorage()
 {
-    delete fAuthentication;
+    delete authentication;
 }
 
 QString RemoteDataStorage::getUid()
 {
-    return fUid;
+    return uid;
 }
 
 const QString &RemoteDataStorage::getConnectionType()
 {
-    return fConnectionType;
+    return connectionType;
 }
 
 const QString &RemoteDataStorage::getUrl()
 {
-    return fUrl;
+    return url;
 }
 
 const QString &RemoteDataStorage::getAuthType()
 {
-    return fAuthType;
+    return authType;
 }
 
 const QString &RemoteDataStorage::getAuthUserName()
 {
-    return fAuthUserName;
+    return authUserName;
 }
 
 const QString &RemoteDataStorage::getAuthKeyStoreId()
 {
-    return fAuthKeyStoreId;
+    return authKeyStoreId;
 }
 
 const QString &RemoteDataStorage::getAuthKeyId()
 {
-    return fAuthKeyId;
+    return authKeyId;
 }
 
 const QString &RemoteDataStorage::getServerUser()
 {
-    return fServerUser;
+    return serverUser;
 }
 
 void RemoteDataStorage::setPHPEncryptedRemoteConnection(const QString &url)
 {
-    fConnectionType = "PHPEncryptedRemoteStorage";
-    fUrl = url;
-    fConnection = ConnectionManager::connectionPHPFor(QUrl(fUrl));
-    fUid = hash();
+    connectionType = "PHPEncryptedRemoteStorage";
+    this->url = url;
+    connection = ConnectionManager::connectionPHPFor(QUrl(url));
+    uid = hash();
 }
 
 void RemoteDataStorage::setHTTPRemoteConnection(const QString &url)
 {
-    fConnectionType = "HTTPRemoteStorage";
-    fUrl = url;
-    fConnection = ConnectionManager::connectionHTTPFor(QUrl(fUrl));
-    fUid = hash();
+    connectionType = "HTTPRemoteStorage";
+    this->url = url;
+    connection = ConnectionManager::connectionHTTPFor(QUrl(url));
+    uid = hash();
 }
 
 void RemoteDataStorage::setSignatureAuth(const QString &userName, const QString &keyStoreId,
                                          const QString &keyId, const QString &serverUser)
 {
-    fAuthType = "SignatureAuth";
-    fAuthUserName = userName;
-    fAuthKeyStoreId = keyStoreId;
-    fAuthKeyId = keyId;
-    fServerUser = serverUser;
+    this->authType = "SignatureAuth";
+    this->authUserName = userName;
+    this->authKeyStoreId = keyStoreId;
+    this->authKeyId = keyId;
+    this->serverUser = serverUser;
 
-    delete fAuthentication;
-    fAuthentication = new SignatureAuthentication(fConnection, fProfile, fAuthUserName,
-                                                  fAuthKeyStoreId, fAuthKeyId, fServerUser);
+    delete authentication;
+    authentication = new SignatureAuthentication(connection, profile, authUserName,
+                                                  authKeyStoreId, authKeyId, serverUser);
 }
 
 RemoteConnection *RemoteDataStorage::getRemoteConnection()
 {
-    return fConnection;
+    return connection;
 }
 
 RemoteAuthentication *RemoteDataStorage::getRemoteAuthentication()
 {
-    return fAuthentication;
+    return authentication;
 }
 
 QString RemoteDataStorage::hash()
 {
     CryptoInterface *crypto = CryptoInterfaceSingleton::getCryptoInterface();
-    QByteArray value = QString(fConnectionType + fUrl).toLatin1();
+    QByteArray value = QString(connectionType + url).toLatin1();
     QByteArray hashResult = crypto->sha1Hash(value);
     return crypto->toHex(hashResult);
 }
-
 
 WP::err RemoteDataStorage::write(StorageDirectory &dir)
 {

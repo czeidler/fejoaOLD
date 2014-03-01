@@ -23,18 +23,18 @@ public:
 
     void addChildHandler(InStanzaHandler *handler);
 
-    InStanzaHandler *parent() const;
-    const QList<InStanzaHandler *> &childs() const;
+    InStanzaHandler *getParent() const;
+    const QList<InStanzaHandler *> &getChilds() const;
 
 private:
     void setParent(InStanzaHandler *parent);
 
-    QString fName;
-    bool fIsOptional;
-    bool fHasBeenHandled;
+    QString name;
+    bool isOptionalStanza;
+    bool stanzaHasBeenHandled;
 
-    InStanzaHandler *fParent;
-    QList<InStanzaHandler*> fChildHandlers;
+    InStanzaHandler *parent;
+    QList<InStanzaHandler*> childHandlers;
 };
 
 
@@ -57,36 +57,36 @@ private:
         QList<InStanzaHandler*> handlers;
     };
 
-    QXmlStreamReader fXMLReader;
-    handler_tree fRoot;
-    InStanzaHandler *fRootHandler;
-    InStanzaHandler *fCurrentHandler;
-    handler_tree *fCurrentHandlerTree;
+    QXmlStreamReader xmlReader;
+    handler_tree root;
+    InStanzaHandler *rootHandler;
+    InStanzaHandler *currentHandler;
+    handler_tree *currentHandlerTree;
 };
 
 class OutStanza {
 public:
-    OutStanza(const QString &name);
+    OutStanza(const QString &getName);
 
-    const QString &name() const;
-    const QXmlStreamAttributes &attributes() const;
-    const QString &text() const;
-    OutStanza *parent() const;
+    const QString &getName() const;
+    const QXmlStreamAttributes &getAttributes() const;
+    const QString &getText() const;
+    OutStanza *getParent() const;
 
-    void setText(const QString &text);
-    void addAttribute(const QString &namespaceUri, const QString &name, const QString &value);
+    void setText(const QString &getText);
+    void addAttribute(const QString &namespaceUri, const QString &getName, const QString &value);
     void addAttribute(const QString &qualifiedName, const QString &value);
 
     /*! Clear all data except the stanza name. This can be used to free memory of large text in
      *  nested stanza trees. */
     void clearData();
 
-    void setParent(OutStanza *parent);
+    void setParent(OutStanza *getParent);
 private:
-    QString fName;
-    QXmlStreamAttributes fAttributes;
-    QString fText;
-    OutStanza *fParent;
+    QString name;
+    QXmlStreamAttributes attributes;
+    QString text;
+    OutStanza *parent;
 };
 
 class ProtocolOutStream {
@@ -105,8 +105,8 @@ private:
     void writeStartDocument();
     void writeEndDocument();
 
-    OutStanza *fCurrentStanza;
-    QXmlStreamWriter fXMLWriter;
+    OutStanza *currentStanza;
+    QXmlStreamWriter xmlWriter;
 };
 
 
@@ -123,27 +123,27 @@ enum IqType {
 
 class IqOutStanza : public OutStanza {
 public:
-    IqOutStanza(IqType type);
+    IqOutStanza(IqType getType);
 
-    IqType type();
+    IqType getType();
 
 private:
     static QString toString(IqType type);
 
-    IqType fType;
+    IqType type;
 };
 
 class IqInStanzaHandler : public InStanzaHandler {
 public:
-    IqInStanzaHandler(IqType type);
+    IqInStanzaHandler(IqType getType);
 
-    IqType type();
+    IqType getType();
     virtual bool handleStanza(const QXmlStreamAttributes &attributes);
 
 private:
     static IqType fromString(const QString &string);
 
-    IqType fType;
+    IqType type;
 };
 
 #endif // PROTOCOLPARSER_H

@@ -32,7 +32,7 @@ public:
     virtual KeyStore *getKeyStore();
 
 protected:
-    QString fMainKeyId;
+    QString mainKeyId;
 };
 
 
@@ -56,8 +56,8 @@ public:
 
     virtual KeyStore *getKeyStore();
 private:
-    KeyStore *fKeyStore;
-    QStringList fKeyIdList;
+    KeyStore *keyStore;
+    QStringList keyIdList;
 };
 
 
@@ -86,7 +86,7 @@ private:
         QString publicKey;
     };
 
-    QMap<QString, PublicKeySet> fKeyMap;
+    QMap<QString, PublicKeySet> keyMap;
 };
 
 
@@ -120,12 +120,12 @@ public:
 private:
     QString getKeysDirectory() const;
 
-    bool fPrivateKeyStore;
-    QString fUid;
-    ContactKeys *fKeys;
+    bool privateKeyStore;
+    QString uid;
+    ContactKeys *keys;
 
-    QString fServerUser;
-    QString fServer;
+    QString serverUser;
+    QString server;
 };
 
 

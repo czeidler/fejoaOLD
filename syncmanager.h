@@ -24,10 +24,10 @@ public slots:
     void onSyncFinished(WP::err error);
 
 private:
-    SyncManager* fSyncManager;
-    DatabaseInterface *fDatabase;
-    RemoteSync *fRemoteSync;
-    QString fOldTip;
+    SyncManager* syncManager;
+    DatabaseInterface *database;
+    RemoteSync *remoteSync;
+    QString oldTip;
 };
 
 
@@ -60,12 +60,12 @@ private slots:
 private:
     friend class SyncEntry;
 
-    RemoteDataStorage* fRemoteDataStorage;
-    QList<SyncEntry*> fSyncEntries;
+    RemoteDataStorage* remoteDataStorage;
+    QList<SyncEntry*> syncEntries;
 
-    RemoteAuthentication *fAuthentication;
-    RemoteConnection *fRemoteConnection;
-    RemoteConnectionReply *fServerReply;
+    RemoteAuthentication *authentication;
+    RemoteConnection *remoteConnection;
+    RemoteConnectionReply *serverReply;
 };
 
 #endif // SYNCMANAGER_H

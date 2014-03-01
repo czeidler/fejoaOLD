@@ -16,7 +16,7 @@ public:
     RemoteConnectionReply(QIODevice *device, QObject *parent = NULL);
     virtual ~RemoteConnectionReply() {}
 
-    QIODevice *device();
+    QIODevice *getDevice();
 
     QByteArray readAll();
     virtual void abort() = 0;
@@ -25,7 +25,7 @@ signals:
     void finished(WP::err error);
 
 protected:
-    QIODevice *fDevice;
+    QIODevice *device;
 };
 
 
@@ -51,15 +51,15 @@ protected:
     void setConnected();
     void setDisconnected();
 
-    bool fConnected;
-    bool fConnecting;
+    bool connected;
+    bool connecting;
 };
 
 
 class HTTPConnectionReply : public RemoteConnectionReply {
 Q_OBJECT
 public:
-    HTTPConnectionReply(QIODevice *device, QNetworkReply *reply, QObject *parent = NULL);
+    HTTPConnectionReply(QIODevice *getDevice, QNetworkReply *reply, QObject *parent = NULL);
 
     virtual void abort();
 
@@ -68,7 +68,7 @@ private slots:
     void errorSlot(QNetworkReply::NetworkError code);
 
 private:
-    QNetworkReply *fReply;
+    QNetworkReply *networkReply;
 };
 
 
@@ -94,8 +94,8 @@ protected:
     virtual RemoteConnectionReply* createRemoteConnectionReply(QNetworkReply *reply);
 
 protected:
-    QUrl fUrl;
-    QMap<QNetworkReply*, RemoteConnectionReply*> fReplyMap;
+    QUrl url;
+    QMap<QNetworkReply*, RemoteConnectionReply*> networkReplyMap;
 };
 
 
@@ -110,9 +110,9 @@ protected:
     qint64 readData(char *data, qint64 maxSize);
 
 private:
-    PHPEncryptionFilter *fEncryption;
-    QNetworkReply *fSource;
-    bool fHasBeenDecrypted;
+    PHPEncryptionFilter *encryption;
+    QNetworkReply *source;
+    bool hasBeenDecrypted;
 };
 
 
@@ -142,12 +142,12 @@ protected:
     virtual RemoteConnectionReply* createRemoteConnectionReply(QNetworkReply *reply);
 
 private:
-    CryptoInterface *fCrypto;
-    QNetworkReply *fNetworkReply;
+    CryptoInterface *crypto;
+    QNetworkReply *networkReply;
 
-    QString fSecretNumber;
-    QByteArray fInitVector;
-    PHPEncryptionFilter *fEncryption;
+    QString secretNumber;
+    QByteArray initVector;
+    PHPEncryptionFilter *encryption;
 };
 
 
@@ -159,20 +159,20 @@ public:
     Type *connectionFor(const QUrl &url) {
         Type *connection = NULL;
         QString hash = url.toString();
-        typename QMap<QString, Type*>::iterator it = fConnections.find(hash);
-        if (it != fConnections.end()) {
+        typename QMap<QString, Type*>::iterator it = connectionMap.find(hash);
+        if (it != connectionMap.end()) {
             connection = it.value();
         } else {
             connection = new Type(QUrl(url));
             if (connection == NULL)
                 return NULL;
-            fConnections[hash] = connection;
+            connectionMap[hash] = connection;
         }
         return connection;
     }
 
 private:
-    QMap<QString, Type*> fConnections;
+    QMap<QString, Type*> connectionMap;
 };
 
 

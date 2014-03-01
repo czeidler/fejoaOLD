@@ -26,7 +26,7 @@ private:
     QString _CreateXMLMessageRequest(const QString& branch, const QString& fromCommit, const QString& toCommit);
 
 
-    GitInterface*   fGitInterface;
+    GitInterface*   gitInterface;
 };
 
 #endif // MESSAGERECEIVER_H

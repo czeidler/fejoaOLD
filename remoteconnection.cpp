@@ -26,18 +26,18 @@ private:
 
 RemoteConnectionReply::RemoteConnectionReply(QIODevice *device, QObject *parent) :
     QObject(parent),
-    fDevice(device)
+    device(device)
 {
 }
 
-QIODevice *RemoteConnectionReply::device()
+QIODevice *RemoteConnectionReply::getDevice()
 {
-    return fDevice;
+    return device;
 }
 
 QByteArray RemoteConnectionReply::readAll()
 {
-    QByteArray data = fDevice->readAll();
+    QByteArray data = device->readAll();
     qDebug() << data;
     return data;
     //return fDevice->readAll();
@@ -45,8 +45,8 @@ QByteArray RemoteConnectionReply::readAll()
 
 RemoteConnection::RemoteConnection(QObject *parent) :
     QObject(parent),
-    fConnected(false),
-    fConnecting(false)
+    connected(false),
+    connecting(false)
 {
 }
 
@@ -56,36 +56,36 @@ RemoteConnection::~RemoteConnection()
 
 bool RemoteConnection::isConnected()
 {
-    return fConnected;
+    return connected;
 }
 
 bool RemoteConnection::isConnecting()
 {
-    return fConnecting;
+    return connecting;
 }
 
 void RemoteConnection::setConnectionStarted()
 {
-    fConnecting = true;
-    fConnected = false;
+    connecting = true;
+    connected = false;
 }
 
 void RemoteConnection::setConnected()
 {
-    fConnected = true;
-    fConnecting = false;
+    connected = true;
+    connecting = false;
 }
 
 void RemoteConnection::setDisconnected()
 {
-    fConnecting = false;
-    fConnected = false;
+    connecting = false;
+    connected = false;
 }
 
 
 HTTPConnectionReply::HTTPConnectionReply(QIODevice *device, QNetworkReply *reply, QObject *parent) :
     RemoteConnectionReply(device, parent),
-    fReply(reply)
+    networkReply(reply)
 {
     connect(reply, SIGNAL(finished()), this, SLOT(finishedSlot()));
     connect(reply, SIGNAL(error(QNetworkReply::NetworkError)), this, SLOT(errorSlot(QNetworkReply::NetworkError)));
@@ -93,8 +93,8 @@ HTTPConnectionReply::HTTPConnectionReply(QIODevice *device, QNetworkReply *reply
 
 void HTTPConnectionReply::abort()
 {
-    if (!fReply->isFinished())
-        fReply->abort();
+    if (!networkReply->isFinished())
+        networkReply->abort();
 }
 
 void HTTPConnectionReply::finishedSlot()
@@ -109,7 +109,7 @@ void HTTPConnectionReply::errorSlot(QNetworkReply::NetworkError code)
 
 HTTPConnection::HTTPConnection(const QUrl &url, QObject *parent) :
     RemoteConnection(parent),
-    fUrl(url)
+    url(url)
 {
 }
 
@@ -119,7 +119,7 @@ HTTPConnection::~HTTPConnection()
 
 QUrl HTTPConnection::getUrl()
 {
-    return fUrl;
+    return url;
 }
 
 
@@ -160,7 +160,7 @@ RemoteConnectionReply *HTTPConnection::send(const QByteArray &data)
      multiPart->append(previewPathPart);
      multiPart->append(previewFilePart);
 
-     QNetworkRequest request(fUrl);
+     QNetworkRequest request(url);
 /*
     QNetworkRequest request;
     request.setUrl(fUrl);
@@ -181,20 +181,20 @@ RemoteConnectionReply *HTTPConnection::send(const QByteArray &data)
     //connect(reply, SIGNAL(error(QNetworkReply::NetworkError)), this, SLOT(replyError(QNetworkReply::NetworkError)));
 
     RemoteConnectionReply *remoteConnectionReply = createRemoteConnectionReply(reply);
-    fReplyMap.insert(reply, remoteConnectionReply);
+    networkReplyMap.insert(reply, remoteConnectionReply);
 
     return remoteConnectionReply;
 }
 
 void HTTPConnection::replyFinished(QNetworkReply *reply)
 {
-    QMap<QNetworkReply*, RemoteConnectionReply*>::iterator it = fReplyMap.find(reply);
-    if (it == fReplyMap.end())
+    QMap<QNetworkReply*, RemoteConnectionReply*>::iterator it = networkReplyMap.find(reply);
+    if (it == networkReplyMap.end())
         return;
 
     RemoteConnectionReply* receiver = it.value();
     receiver->deleteLater();
-    fReplyMap.remove(reply);
+    networkReplyMap.remove(reply);
 }
 
 RemoteConnectionReply *HTTPConnection::createRemoteConnectionReply(QNetworkReply *reply)
@@ -204,9 +204,9 @@ RemoteConnectionReply *HTTPConnection::createRemoteConnectionReply(QNetworkReply
 
 EncryptedPHPConnection::EncryptedPHPConnection(QUrl url, QObject *parent) :
     HTTPConnection(url, parent),
-    fEncryption(NULL)
+    encryption(NULL)
 {
-    fCrypto = CryptoInterfaceSingleton::getCryptoInterface();
+    crypto = CryptoInterfaceSingleton::getCryptoInterface();
 }
 
 WP::err EncryptedPHPConnection::connectToServer()
@@ -216,14 +216,14 @@ WP::err EncryptedPHPConnection::connectToServer()
     if (isConnecting())
         return WP::kOk;
 
-    fInitVector = fCrypto->generateInitalizationVector(512);
+    initVector = crypto->generateInitalizationVector(512);
     QString prime, base, pub;
-    fCrypto->generateDHParam(prime, base, fSecretNumber, pub);
+    crypto->generateDHParam(prime, base, secretNumber, pub);
 
     QNetworkAccessManager *manager = HTTPConnection::getNetworkAccessManager();
 
     QNetworkRequest request;
-    request.setUrl(fUrl);
+    request.setUrl(url);
     request.setHeader(QNetworkRequest::ContentTypeHeader,"application/x-www-form-urlencoded");
 
     QByteArray content = "";
@@ -231,11 +231,11 @@ WP::err EncryptedPHPConnection::connectToServer()
     content += "dh_prime=" + prime + "&";
     content += "dh_base=" + base + "&";
     content += "dh_public_key=" + pub + "&";
-    content += "encrypt_iv=" + fInitVector.toBase64();
+    content += "encrypt_iv=" + initVector.toBase64();
 
-    fNetworkReply = manager->post(request, content);
-    connect(fNetworkReply, SIGNAL(finished()), this, SLOT(handleConnectionAttemptReply()));
-    connect(fNetworkReply, SIGNAL(error(QNetworkReply::NetworkError)), this,
+    networkReply = manager->post(request, content);
+    connect(networkReply, SIGNAL(finished()), this, SLOT(handleConnectionAttemptReply()));
+    connect(networkReply, SIGNAL(error(QNetworkReply::NetworkError)), this,
             SLOT(networkRequestError(QNetworkReply::NetworkError)));
 
     setConnectionStarted();
@@ -251,17 +251,17 @@ WP::err EncryptedPHPConnection::disconnectFromServer()
 
 RemoteConnectionReply *EncryptedPHPConnection::send(const QByteArray &data)
 {
-    if (fEncryption == NULL)
+    if (encryption == NULL)
         return NULL;
 
     QByteArray outgoing;
-    fEncryption->sendFilter(data, outgoing);
+    encryption->sendFilter(data, outgoing);
     return HTTPConnection::send(outgoing);
 }
 
 void EncryptedPHPConnection::handleConnectionAttemptReply()
 {
-    QByteArray data = fNetworkReply->readAll();
+    QByteArray data = networkReply->readAll();
 
     QString prime;
     QString base;
@@ -290,14 +290,14 @@ void EncryptedPHPConnection::handleConnectionAttemptReply()
     }
     if (prime == "" || base == "" || publicKey == "")
         return;
-    SecureArray key = fCrypto->sharedDHKey(prime, publicKey, fSecretNumber);
+    SecureArray key = crypto->sharedDHKey(prime, publicKey, secretNumber);
     // make it at least 128 byte
     for (int i = key.count(); i < 128; i++)
         key.append('\0');
 
-    fEncryption = new PHPEncryptionFilter(fCrypto, key, fInitVector);
+    encryption = new PHPEncryptionFilter(crypto, key, initVector);
 
-    fNetworkReply->deleteLater();
+    networkReply->deleteLater();
     setConnected();
     emit connectionAttemptFinished(WP::kOk);
 }
@@ -305,15 +305,14 @@ void EncryptedPHPConnection::handleConnectionAttemptReply()
 void EncryptedPHPConnection::networkRequestError(QNetworkReply::NetworkError code)
 {
     setDisconnected();
-    fNetworkReply->deleteLater();
+    networkReply->deleteLater();
     emit connectionAttemptFinished(WP::kError);
 }
 
 RemoteConnectionReply *EncryptedPHPConnection::createRemoteConnectionReply(QNetworkReply *reply)
 {
-    return new EncryptedPHPConnectionReply(fEncryption, reply, this);
+    return new EncryptedPHPConnectionReply(encryption, reply, this);
 }
-
 
 PHPEncryptionFilter::PHPEncryptionFilter(CryptoInterface *crypto,
                                          const SecureArray &cipherKey,
@@ -336,20 +335,20 @@ void PHPEncryptionFilter::receiveFilter(const QByteArray &in, QByteArray &out)
 }
 
 PHPEncryptedDevice::PHPEncryptedDevice(PHPEncryptionFilter *encryption, QNetworkReply *source) :
-    fEncryption(encryption),
-    fSource(source),
-    fHasBeenDecrypted(false)
+    encryption(encryption),
+    source(source),
+    hasBeenDecrypted(false)
 {
 }
 
 qint64 PHPEncryptedDevice::readData(char *data, qint64 maxSize)
 {
-    if (!fSource->isFinished())
+    if (!source->isFinished())
         return 0;
-    if (!fHasBeenDecrypted) {
-        const QByteArray &encryptedData = fSource->readAll();
-        fEncryption->receiveFilter(encryptedData, buffer());
-        fHasBeenDecrypted = true;
+    if (!hasBeenDecrypted) {
+        const QByteArray &encryptedData = source->readAll();
+        encryption->receiveFilter(encryptedData, buffer());
+        hasBeenDecrypted = true;
         emit readyRead();
     }
     return QBuffer::readData(data, maxSize);
@@ -360,12 +359,12 @@ EncryptedPHPConnectionReply::EncryptedPHPConnectionReply(PHPEncryptionFilter *en
                                                          QObject *parent) :
     HTTPConnectionReply(new PHPEncryptedDevice(encryption, reply), reply, parent)
 {
-    fDevice->open(QIODevice::ReadOnly);
+    device->open(QIODevice::ReadOnly);
 }
 
 EncryptedPHPConnectionReply::~EncryptedPHPConnectionReply()
 {
-    delete fDevice;
+    delete device;
 }
 
 

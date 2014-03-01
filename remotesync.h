@@ -27,13 +27,13 @@ private slots:
     void syncPushReply(WP::err code);
 
 private:
-    DatabaseInterface *fDatabase;
-    RemoteDataStorage* fRemoteStorage;
-    RemoteAuthentication *fAuthentication;
-    RemoteConnection *fRemoteConnection;
-    RemoteConnectionReply *fServerReply;
+    DatabaseInterface *database;
+    RemoteDataStorage* remoteStorage;
+    RemoteAuthentication *authentication;
+    RemoteConnection *remoteConnection;
+    RemoteConnectionReply *serverReply;
 
-    QString fSyncUid;
+    QString syncUid;
 };
 
 #endif // REMOTESYNC_H

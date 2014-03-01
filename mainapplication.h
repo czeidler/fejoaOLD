@@ -19,7 +19,7 @@ Q_OBJECT
 public:
     PingRCCommand(RemoteConnection *connection, QObject *parent = NULL) :
         QObject(parent),
-        fNetworkConnection(connection)
+        networkConnection(connection)
     {
     }
 
@@ -30,18 +30,18 @@ public slots:
             return;
 
         QByteArray data("ping");
-        fReply = fNetworkConnection->send(data);
-        connect(fReply, SIGNAL(finished()), this, SLOT(received()));
+        reply = networkConnection->send(data);
+        connect(reply, SIGNAL(finished()), this, SLOT(received()));
     }
 
     virtual void received()
     {
-        QByteArray data = fReply->readAll();
+        QByteArray data = reply->readAll();
     }
 
 private:
-    RemoteConnection* fNetworkConnection;
-    RemoteConnectionReply *fReply;
+    RemoteConnection* networkConnection;
+    RemoteConnectionReply *reply;
 };
 
 
@@ -57,10 +57,10 @@ public:
 private:
     WP::err createNewProfile();
 
-    MainWindow *fMainWindow;
+    MainWindow *mainWindow;
 
-    Profile* fProfile;
-    QNetworkAccessManager *fNetworkAccessManager;
+    Profile* profile;
+    QNetworkAccessManager *networkAccessManager;
 };
 
 #endif // MAINAPPLICATION_H

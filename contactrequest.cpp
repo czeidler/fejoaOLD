@@ -93,21 +93,21 @@ public:
 ContactRequest::ContactRequest(RemoteConnection *connection, const QString &remoteServerUser,
                                UserIdentity *identity, QObject *parent) :
     QObject(parent),
-    fConnection(connection),
-    fServerUser(remoteServerUser),
-    fUserIdentity(identity),
-    fServerReply(NULL)
+    connection(connection),
+    serverUser(remoteServerUser),
+    userIdentity(identity),
+    serverReply(NULL)
 {
 }
 
 WP::err ContactRequest::postRequest()
 {
-    if (fConnection->isConnected())
+    if (connection->isConnected())
         onConnectionRelpy(WP::kOk);
     else {
-        connect(fConnection, SIGNAL(connectionAttemptFinished(WP::err)), this,
+        connect(connection, SIGNAL(connectionAttemptFinished(WP::err)), this,
                 SLOT(onConnectionRelpy(WP::err)));
-        fConnection->connectToServer();
+        connection->connectToServer();
     }
     return WP::kOk;
 }
@@ -118,10 +118,10 @@ void ContactRequest::onConnectionRelpy(WP::err code)
         return;
 
     QByteArray data;
-    makeRequest(data, fUserIdentity->getMyself());
+    makeRequest(data, userIdentity->getMyself());
 
-    fServerReply = fConnection->send(data);
-    connect(fServerReply, SIGNAL(finished(WP::err)), this,
+    serverReply = connection->send(data);
+    connect(serverReply, SIGNAL(finished(WP::err)), this,
             SLOT(onRequestReply(WP::err)));
 }
 
@@ -130,8 +130,8 @@ void ContactRequest::onRequestReply(WP::err code)
     if (code != WP::kOk)
         return;
 
-    QByteArray data = fServerReply->readAll();
-    fServerReply = NULL;
+    QByteArray data = serverReply->readAll();
+    serverReply = NULL;
 
     IqInStanzaHandler iqHandler(kResult);
     ContactRequestHandler *requestHandler = new ContactRequestHandler();
@@ -172,14 +172,14 @@ void ContactRequest::onRequestReply(WP::err code)
                                    certificateHandler->certificate, publicKeyHandler->publicKey);
     contact->setAddress(requestHandler->address);
 
-    WP::err error = fUserIdentity->addContact(contact);
+    WP::err error = userIdentity->addContact(contact);
     if (error != WP::kOk) {
         delete contact;
         emit contactRequestFinished(WP::kError);
         return;
     }
     // commit changes
-    fUserIdentity->getDatabaseBranch()->commit();
+    userIdentity->getDatabaseBranch()->commit();
 
     emit contactRequestFinished(WP::kOk);
     return;
@@ -193,10 +193,10 @@ void ContactRequest::makeRequest(QByteArray &data, Contact *myself)
 
     QString keyId = myself->getKeys()->getMainKeyId();
     QString certificate, publicKey, privateKey;
-    fUserIdentity->getKeyStore()->readAsymmetricKey(keyId, certificate, publicKey, privateKey);
+    userIdentity->getKeyStore()->readAsymmetricKey(keyId, certificate, publicKey, privateKey);
 
     OutStanza *requestStanza =  new OutStanza(kContactRequestStanza);
-    requestStanza->addAttribute("serverUser", fServerUser);
+    requestStanza->addAttribute("serverUser", serverUser);
     requestStanza->addAttribute("uid", myself->getUid());
     requestStanza->addAttribute("keyId", keyId);
     requestStanza->addAttribute("address", myself->getAddress());

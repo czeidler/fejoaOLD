@@ -7,11 +7,11 @@
 
 RemoteSync::RemoteSync(DatabaseInterface *database, RemoteDataStorage* remoteStorage, QObject *parent) :
     QObject(parent),
-    fDatabase(database),
-    fRemoteStorage(remoteStorage),
-    fAuthentication(remoteStorage->getRemoteAuthentication()),
-    fRemoteConnection(remoteStorage->getRemoteAuthentication()->getConnection()),
-    fServerReply(NULL)
+    database(database),
+    remoteStorage(remoteStorage),
+    authentication(remoteStorage->getRemoteAuthentication()),
+    remoteConnection(remoteStorage->getRemoteAuthentication()->getConnection()),
+    serverReply(NULL)
 {
 }
 
@@ -21,12 +21,12 @@ RemoteSync::~RemoteSync()
 
 WP::err RemoteSync::sync()
 {
-    if (fAuthentication->isVerified())
+    if (authentication->isVerified())
         syncConnected(WP::kOk);
     else {
-        connect(fAuthentication, SIGNAL(authenticationAttemptFinished(WP::err)),
+        connect(authentication, SIGNAL(authenticationAttemptFinished(WP::err)),
                 this, SLOT(syncConnected(WP::err)));
-        fAuthentication->login();
+        authentication->login();
     }
     return WP::kOk;
 }
@@ -36,8 +36,8 @@ void RemoteSync::syncConnected(WP::err code)
     if (code != WP::kOk)
         return;
 
-    QString branch = fDatabase->branch();
-    QString lastSyncCommit = fDatabase->getLastSyncCommit(fRemoteStorage->getUid(), branch);
+    QString branch = database->branch();
+    QString lastSyncCommit = database->getLastSyncCommit(remoteStorage->getUid(), branch);
 
     QByteArray outData;
     ProtocolOutStream outStream(&outData);
@@ -53,10 +53,10 @@ void RemoteSync::syncConnected(WP::err code)
 
     outStream.flush();
 
-    if (fServerReply != NULL)
-        fServerReply->disconnect();
-    fServerReply = fRemoteConnection->send(outData);
-    connect(fServerReply, SIGNAL(finished(WP::err)), this, SLOT(syncReply(WP::err)));
+    if (serverReply != NULL)
+        serverReply->disconnect();
+    serverReply = remoteConnection->send(outData);
+    connect(serverReply, SIGNAL(finished(WP::err)), this, SLOT(syncReply(WP::err)));
 }
 
 
@@ -125,8 +125,8 @@ void RemoteSync::syncReply(WP::err code)
     if (code != WP::kOk)
         return;
 
-    QByteArray data = fServerReply->readAll();
-    fServerReply = NULL;
+    QByteArray data = serverReply->readAll();
+    serverReply = NULL;
 
     IqInStanzaHandler iqHandler(kResult);
     SyncPullData syncPullData;
@@ -138,9 +138,9 @@ void RemoteSync::syncReply(WP::err code)
 
     inStream.parse();
 
-    QString localBranch = fDatabase->branch();
-    QString localTipCommit = fDatabase->getTip();
-    QString lastSyncCommit = fDatabase->getLastSyncCommit(fRemoteStorage->getUid(), localBranch);
+    QString localBranch = database->branch();
+    QString localTipCommit = database->getTip();
+    QString lastSyncCommit = database->getLastSyncCommit(remoteStorage->getUid(), localBranch);
 
     if (!syncPullHandler->hasBeenHandled() || syncPullData.branch != localBranch) {
         // error occured, the server should at least send back the branch name
@@ -155,15 +155,15 @@ void RemoteSync::syncReply(WP::err code)
     }
     // see if the server is ahead by checking if we got packages
     if (syncPullData.pack.size() != 0) {
-        fSyncUid = syncPullData.tip;
-        WP::err error = fDatabase->importPack(syncPullData.pack, lastSyncCommit,
+        syncUid = syncPullData.tip;
+        WP::err error = database->importPack(syncPullData.pack, lastSyncCommit,
                                               syncPullData.tip);
         if (error != WP::kOk) {
             emit syncFinished(error);
             return;
         }
 
-        localTipCommit = fDatabase->getTip();
+        localTipCommit = database->getTip();
         // done? otherwise it was a merge and we have to push our merge
         if (localTipCommit == lastSyncCommit) {
             emit syncFinished(WP::kOk);
@@ -173,12 +173,12 @@ void RemoteSync::syncReply(WP::err code)
 
     // we are ahead of the server: push changes to the server
     QByteArray pack;
-    WP::err error = fDatabase->exportPack(pack, lastSyncCommit, localTipCommit, fSyncUid);
+    WP::err error = database->exportPack(pack, lastSyncCommit, localTipCommit, syncUid);
     if (error != WP::kOk) {
         emit syncFinished(error);
         return;
     }
-    fSyncUid = localTipCommit;
+    syncUid = localTipCommit;
 
     QByteArray outData;
     ProtocolOutStream outStream(&outData);
@@ -196,8 +196,8 @@ void RemoteSync::syncReply(WP::err code)
 
     outStream.flush();
 
-    fServerReply = fRemoteConnection->send(outData);
-    connect(fServerReply, SIGNAL(finished(WP::err)), this, SLOT(syncPushReply(WP::err)));
+    serverReply = remoteConnection->send(outData);
+    connect(serverReply, SIGNAL(finished(WP::err)), this, SLOT(syncPushReply(WP::err)));
 }
 
 void RemoteSync::syncPushReply(WP::err code)
@@ -205,8 +205,8 @@ void RemoteSync::syncPushReply(WP::err code)
     if (code != WP::kOk)
         return;
 
-    QByteArray data = fServerReply->readAll();
+    QByteArray data = serverReply->readAll();
 
-    fDatabase->updateLastSyncCommit(fRemoteStorage->getUid(), fDatabase->branch(), fSyncUid);
+    database->updateLastSyncCommit(remoteStorage->getUid(), database->branch(), syncUid);
     emit syncFinished(WP::kOk);
 }

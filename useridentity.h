@@ -61,10 +61,10 @@ private:
 
     WP::err writePublicSignature(const QString &filename, const QString &publicKey);
 
-    Mailbox *fMailbox;
+    Mailbox *mailbox;
 
-    Contact *fMyselfContact;
-    QList<Contact *> fContacts;
+    Contact *myselfContact;
+    QList<Contact *> contactList;
 
     UserIdContactFinder contactFinder;
 };

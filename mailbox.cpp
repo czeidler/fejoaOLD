@@ -101,8 +101,8 @@ void MessageListModel::clear()
 
 
 Mailbox::Mailbox(DatabaseBranch *branch, const QString &baseDir) :
-    fUserIdentity(NULL),
-    channelFinder(&fThreadList)
+    owner(NULL),
+    channelFinder(&threadList)
 {
     setToDatabase(branch, baseDir);
 }
@@ -114,7 +114,7 @@ Mailbox::~Mailbox()
 WP::err Mailbox::createNewMailbox(KeyStore *keyStore, const QString &defaultKeyId, bool addUidToBaseDir)
 {
     // derive uid
-    QString uidHex = fCrypto->generateUid();
+    QString uidHex = crypto->generateUid();
 
     // start creating the identity
     WP::err error = EncryptedUserData::create(uidHex, keyStore, defaultKeyId, addUidToBaseDir);
@@ -165,7 +165,7 @@ WP::err Mailbox::storeChannel(MessageChannelRef channel)
 
 WP::err Mailbox::storeChannelInfo(MessageChannelRef channel, MessageChannelInfoRef info)
 {
-    Contact *myself = fUserIdentity->getMyself();
+    Contact *myself = owner->getMyself();
 
     /* The info uid is calculated from its data when calling toRawData. However, the uid is
      * needed to determine the message path. For that reason we don't use writeParcel here.
@@ -183,7 +183,7 @@ WP::err Mailbox::storeChannelInfo(MessageChannelRef channel, MessageChannelInfoR
 
 WP::err Mailbox::storeMessage(MessageRef message, MessageChannelRef channel)
 {
-    Contact *myself = fUserIdentity->getMyself();
+    Contact *myself = owner->getMyself();
 
     /* The message uid is calculated from its data when calling toRawData. However, the uid is
      * needed to determine the message path. For that reason we don't use writeParcel here.
@@ -225,7 +225,7 @@ QString Mailbox::makeUidPath(const QString &uid)
 
 WP::err Mailbox::writeParcel(const QString &path, DataParcel *parcel)
 {
-    Contact *myself = fUserIdentity->getMyself();
+    Contact *myself = owner->getMyself();
 
     QBuffer data;
     data.open(QBuffer::WriteOnly);
@@ -237,19 +237,19 @@ WP::err Mailbox::writeParcel(const QString &path, DataParcel *parcel)
 
 void Mailbox::setOwner(UserIdentity *userIdentity)
 {
-    fUserIdentity = userIdentity;
+    this->owner = userIdentity;
     readMailDatabase();
-    fThreadList.sort();
+    threadList.sort();
 }
 
 UserIdentity *Mailbox::getOwner() const
 {
-    return fUserIdentity;
+    return owner;
 }
 
 MessageThreadDataModel &Mailbox::getThreads()
 {
-    return fThreadList;
+    return threadList;
 }
 
 QStringList Mailbox::getChannelUids(QString path)
@@ -304,8 +304,8 @@ QStringList Mailbox::getChannelUids()
 
 MessageThread *Mailbox::findMessageThread(const QString &channelId)
 {
-    for (int i = 0; i < fThreadList.getChannelCount(); i++) {
-        MessageThread *thread = fThreadList.channelAt(i);
+    for (int i = 0; i < threadList.getChannelCount(); i++) {
+        MessageThread *thread = threadList.channelAt(i);
         if (thread->getMessageChannel()->getUid() == channelId)
             return thread;
     }
@@ -319,7 +319,7 @@ void Mailbox::onNewCommits(const QString &startCommit, const QString &endCommit)
 
 WP::err Mailbox::readMailDatabase()
 {
-    fThreadList.clear();
+    threadList.clear();
 
     QStringList messageChannels = getChannelUids();
     foreach (const QString & channelPath, messageChannels) {
@@ -329,10 +329,10 @@ WP::err Mailbox::readMailDatabase()
             continue;
         }
         MessageThread *thread = new MessageThread(channel);
-        fThreadList.addChannel(thread);
+        threadList.addChannel(thread);
         WP::err error = readThreadContent(channelPath, thread);
         if (error != WP::kOk) {
-            fThreadList.removeChannel(thread);
+            threadList.removeChannel(thread);
             delete thread;
         }
 
@@ -356,7 +356,7 @@ WP::err Mailbox::readThreadContent(const QString &channelPath, MessageThread *th
 
         // read channel info
         MessageChannelInfoRef info(new MessageChannelInfo(&channelFinder));
-        error = info->fromRawData(fUserIdentity->getContactFinder(), data);
+        error = info->fromRawData(owner->getContactFinder(), data);
         if (error == WP::kOk) {
             infos.append(info);
             continue;
@@ -376,7 +376,7 @@ WP::err Mailbox::readThreadContent(const QString &channelPath, MessageThread *th
 
         // read message
         MessageRef message(new Message(&channelFinder));
-        error = message->fromRawData(fUserIdentity->getContactFinder(), data);
+        error = message->fromRawData(owner->getContactFinder(), data);
         if (error == WP::kOk) {
             messages.addMessage(message);
             if (lastMessage == NULL || lastMessage->getTimestamp() < message->getTimestamp())
@@ -399,9 +399,9 @@ MessageChannel* Mailbox::readChannel(const QString &channelPath) {
     if (error != WP::kOk)
         return NULL;
 
-    Contact *myself = fUserIdentity->getMyself();
+    Contact *myself = owner->getMyself();
     MessageChannel *channel = new MessageChannel(myself);
-    error = channel->fromRawData(fUserIdentity->getContactFinder(), data);
+    error = channel->fromRawData(owner->getContactFinder(), data);
     if (error != WP::kOk) {
         delete channel;
         return NULL;

@@ -40,21 +40,21 @@ private:
 
     QString hash();
 
-    Profile *fProfile;
+    Profile *profile;
 
-    RemoteConnection *fConnection;
-    RemoteAuthentication *fAuthentication;
+    RemoteConnection *connection;
+    RemoteAuthentication *authentication;
 
-    QString fConnectionType;
-    QString fUrl;
-    QString fUid;
+    QString connectionType;
+    QString url;
+    QString uid;
 
-    QString fServerUser;
+    QString serverUser;
 
-    QString fAuthType;
-    QString fAuthUserName;
-    QString fAuthKeyStoreId;
-    QString fAuthKeyId;
+    QString authType;
+    QString authUserName;
+    QString authKeyStoreId;
+    QString authKeyId;
 };
 
 #endif // REMOTESTORAGE_H

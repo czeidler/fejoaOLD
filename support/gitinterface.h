@@ -53,12 +53,12 @@ private:
     QString removeFilename(QString &path) const;
 
 private:
-    QString fRepositoryPath;
-    git_repository *fRepository;
-    git_odb *fObjectDatabase;
-    QString fCurrentBranch;
+    QString repositoryPath;
+    git_repository *repository;
+    git_odb *objectDatabase;
+    QString currentBranch;
 
-    git_oid fNewRootTreeOid;
+    git_oid newRootTreeOid;
 };
 
 #endif // GITINTERFACE_H

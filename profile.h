@@ -30,7 +30,7 @@ public:
     IdentityRef *removeIdentityAt(int index);
     UserIdentity *identityAt(int index);
 private:
-    QList<IdentityRef*> fIdentities;
+    QList<IdentityRef*> identityList;
 };
 
 
@@ -108,7 +108,7 @@ private:
         ProfileKeyStoreFinder(QMap<QString, KeyStoreRef*> &map);
         virtual KeyStore *find(const QString &keyStoreId);
     private:
-        QMap<QString, KeyStoreRef*> &fMapOfKeyStores;
+        QMap<QString, KeyStoreRef*> &mapOfKeyStores;
     };
 
     class ProfileMailboxFinder : public MailboxFinder {
@@ -116,17 +116,17 @@ private:
         ProfileMailboxFinder(QMap<QString, MailboxRef*> &map);
         virtual Mailbox *find(const QString &mailboxId);
     private:
-        QMap<QString, MailboxRef*> &fMapOfKeyMailboxes;
+        QMap<QString, MailboxRef*> &mapOfKeyMailboxes;
     };
 
-    IdentityListModel fIdentities;
+    IdentityListModel identitiesListModel;
 
-    QMap<QString, KeyStoreRef*> fMapOfKeyStores;
-    QString fMainMailbox;
-    QMap<QString, MailboxRef*> fMapOfMailboxes;
-    QMap<QString, RemoteDataStorage*> fMapOfRemotes;
+    QMap<QString, KeyStoreRef*> mapOfKeyStores;
+    QString mainMailbox;
+    QMap<QString, MailboxRef*> mapOfMailboxes;
+    QMap<QString, RemoteDataStorage*> mapOfRemotes;
 
-    QList<DatabaseBranch*> fBranches;
+    QList<DatabaseBranch*> branchList;
 };
 
 
@@ -135,27 +135,27 @@ class UserDataRef : public StorageDirectory {
 public:
     UserDataRef(EncryptedUserData *database, const QString &path, Type *userData) :
         StorageDirectory(database, path),
-        fUserData(userData)
+        userData(userData)
     {
-        if (fUserData != NULL) {
-            fDatabaseBranch = fUserData->getDatabaseBranch();
-            fDatabaseBaseDir = fUserData->getDatabaseBaseDir();
+        if (userData != NULL) {
+            databaseBranch = userData->getDatabaseBranch();
+            databaseBaseDir = userData->getDatabaseBaseDir();
         }
     }
 
     virtual ~UserDataRef() {
-        delete fUserData;
+        delete userData;
     }
 
     virtual WP::err writeEntry()
     {
-        WP::err error = write("database_path", fDatabaseBranch->getDatabasePath());
+        WP::err error = write("database_path", databaseBranch->getDatabasePath());
         if (error != WP::kOk)
             return error;
-        error = write("database_branch", fDatabaseBranch->getBranch());
+        error = write("database_branch", databaseBranch->getBranch());
         if (error != WP::kOk)
             return error;
-        error = write("database_base_dir", fDatabaseBaseDir);
+        error = write("database_base_dir", databaseBaseDir);
         if (error != WP::kOk)
             return error;
         return WP::kOk;
@@ -170,34 +170,34 @@ public:
         error = read("database_branch", databaseBranch);
         if (error != WP::kOk)
             return error;
-        fDatabaseBranch = profile->databaseBranchFor(databasePath, databaseBranch);
-        error = read("database_base_dir", fDatabaseBaseDir);
+        this->databaseBranch = profile->databaseBranchFor(databasePath, databaseBranch);
+        error = read("database_base_dir", databaseBaseDir);
         if (error != WP::kOk)
             return error;
 
-        fUserData = instanciate();
-        if (fUserData == NULL)
+        userData = instanciate();
+        if (userData == NULL)
             return WP::kError;
         return WP::kOk;
     }
 
     void setUserData(Type *data) {
-        delete fUserData;
-        fUserData = data;
+        delete userData;
+        userData = data;
     }
 
     Type *getUserData() const {
-        return fUserData;
+        return userData;
     }
 
 protected:
     virtual Type *instanciate() = 0;
 
 protected:
-    DatabaseBranch *fDatabaseBranch;
-    QString fDatabaseBaseDir;
+    DatabaseBranch *databaseBranch;
+    QString databaseBaseDir;
 
-    Type *fUserData;
+    Type *userData;
 };
 
 

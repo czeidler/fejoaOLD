@@ -97,7 +97,7 @@ private:
 
 MessageReceiver::MessageReceiver(GitInterface* gitInterface, QObject *parent) :
     QObject(parent),
-    fGitInterface(gitInterface)
+    gitInterface(gitInterface)
 {
 }
 
@@ -109,7 +109,7 @@ void MessageReceiver::messageDataReceived(const QByteArray& data)
 
 QString MessageReceiver::getMessagesRequest()
 {
-    QString first = fGitInterface->getTip();
+    QString first = gitInterface->getTip();
     return _CreateXMLMessageRequest("master", first, "");
 }
 
@@ -131,13 +131,13 @@ void MessageReceiver::commitPackReceived(const QByteArray& data, const QString& 
         objectEnd += size.toInt();
 
         const char* dataPointer = text.data() + blobStart;
-        fGitInterface->writeFile(hash, dataPointer, objectEnd - blobStart);
+        gitInterface->writeFile(hash, dataPointer, objectEnd - blobStart);
 
         objectStart = objectEnd;
     }
 
     // update tip
-    fGitInterface->updateTip(last);
+    gitInterface->updateTip(last);
 }
 
 

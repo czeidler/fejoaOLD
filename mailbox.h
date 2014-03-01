@@ -41,7 +41,7 @@ public:
 
     WP::err storeMessage(MessageRef message);
 
-    void setOwner(UserIdentity *userIdentity);
+    void setOwner(UserIdentity *owner);
     UserIdentity *getOwner() const;
 
     MessageListModel &getMessages();
@@ -88,9 +88,9 @@ private:
     QString makeUidPath(const QString &uid);
     WP::err writeParcel(const QString &path, DataParcel *parcel);
 
-    UserIdentity *fUserIdentity;
+    UserIdentity *owner;
 
-    MessageThreadDataModel fThreadList;
+    MessageThreadDataModel threadList;
     MailboxMessageChannelFinder channelFinder;
 };
 

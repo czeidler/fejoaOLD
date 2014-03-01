@@ -19,44 +19,44 @@ IdentityListModel::IdentityListModel(QObject * parent)
 QVariant IdentityListModel::data(const QModelIndex &index, int role) const
 {
     if (role == Qt::DisplayRole)
-        return fIdentities.at(index.row())->getUserData()->getUid();
+        return identityList.at(index.row())->getUserData()->getUid();
 
     return QVariant();
 }
 
 int IdentityListModel::rowCount(const QModelIndex &/*parent*/) const
 {
-    return fIdentities.count();
+    return identityList.count();
 }
 
 void IdentityListModel::addIdentity(IdentityRef *identity)
 {
-    int count = fIdentities.count();
+    int count = identityList.count();
     beginInsertRows(QModelIndex(), count, count);
-    fIdentities.append(identity);
+    identityList.append(identity);
     endInsertRows();
 }
 
 void IdentityListModel::removeIdentity(IdentityRef *identity)
 {
-    int index = fIdentities.indexOf(identity);
+    int index = identityList.indexOf(identity);
     beginRemoveRows(QModelIndex(), index, index);
-    fIdentities.removeAt(index);
+    identityList.removeAt(index);
     endRemoveRows();
 }
 
 IdentityRef *IdentityListModel::removeIdentityAt(int index)
 {
-    IdentityRef *entry = fIdentities.at(index);
+    IdentityRef *entry = identityList.at(index);
     beginRemoveRows(QModelIndex(), index, index);
-    fIdentities.removeAt(index);
+    identityList.removeAt(index);
     endRemoveRows();
     return entry;
 }
 
 UserIdentity *IdentityListModel::identityAt(int index)
 {
-    return fIdentities.at(index)->getUserData();
+    return identityList.at(index)->getUserData();
 }
 
 Profile::Profile(const QString &path, const QString &branchName)
@@ -72,19 +72,19 @@ Profile::~Profile()
 
 WP::err Profile::createNewProfile(const SecureArray &password)
 {
-    setUid(fCrypto->generateUid());
+    setUid(crypto->generateUid());
 
     // init key store and master key
-    DatabaseBranch *keyStoreBranch = databaseBranchFor(fDatabaseBranch->getDatabasePath(), "key_stores");
+    DatabaseBranch *keyStoreBranch = databaseBranchFor(databaseBranch->getDatabasePath(), "key_stores");
     KeyStore* keyStore = NULL;
     WP::err error = createNewKeyStore(password, keyStoreBranch, &keyStore);
     if (error != WP::kOk)
         return error;
     setKeyStore(keyStore);
 
-    SecureArray masterKey = fCrypto->generateSymmetricKey(256);
+    SecureArray masterKey = crypto->generateSymmetricKey(256);
     QString masterKeyId;
-    error = keyStore->writeSymmetricKey(masterKey, fCrypto->generateInitalizationVector(256),
+    error = keyStore->writeSymmetricKey(masterKey, crypto->generateInitalizationVector(256),
                                         masterKeyId);
     if (error != WP::kOk)
         return error;
@@ -92,15 +92,15 @@ WP::err Profile::createNewProfile(const SecureArray &password)
     setDefaultKeyId(masterKeyId);
 
     // create mailbox
-    DatabaseBranch *mailboxesBranch = databaseBranchFor(fDatabaseBranch->getDatabasePath(), "mailboxes");
+    DatabaseBranch *mailboxesBranch = databaseBranchFor(databaseBranch->getDatabasePath(), "mailboxes");
     Mailbox *mailbox = NULL;
     error = createNewMailbox(mailboxesBranch, &mailbox);
     if (error != WP::kOk)
         return error;
-    fMainMailbox = mailbox->getUid();
+    mainMailbox = mailbox->getUid();
 
     // init user identity
-    DatabaseBranch *identitiesBranch = databaseBranchFor(fDatabaseBranch->getDatabasePath(), "identities");
+    DatabaseBranch *identitiesBranch = databaseBranchFor(databaseBranch->getDatabasePath(), "identities");
     UserIdentity *identity = NULL;
     error = createNewUserIdentity(identitiesBranch, mailbox, &identity);
     if (error != WP::kOk)
@@ -119,15 +119,15 @@ WP::err Profile::writeConfig()
     if (error != WP::kOk)
         return error;
 
-    error = write(kMainMailboxPath, fMainMailbox);
+    error = write(kMainMailboxPath, mainMailbox);
     return error;
 }
 
 WP::err Profile::commit()
 {
     // just commit all branches
-    for (int i = 0; i < fBranches.count(); i++) {
-        DatabaseBranch *branch = fBranches.at(i);
+    for (int i = 0; i < branchList.count(); i++) {
+        DatabaseBranch *branch = branchList.at(i);
         WP::err error = branch->commit();
         if (error != WP::kOk)
             return error;
@@ -137,22 +137,22 @@ WP::err Profile::commit()
 
 WP::err Profile::open(const SecureArray &password)
 {
-    if (fDatabase == NULL)
+    if (database == NULL)
         return WP::kNotInit;
 
     WP::err error = loadKeyStores();
     if (error != WP::kOk)
         return error;
 
-    error = read(kMainMailboxPath, fMainMailbox);
+    error = read(kMainMailboxPath, mainMailbox);
     if (error != WP::kOk)
         return error;
 
-    Profile::ProfileKeyStoreFinder keyStoreFinder(fMapOfKeyStores);
+    Profile::ProfileKeyStoreFinder keyStoreFinder(mapOfKeyStores);
     error = EncryptedUserData::open(&keyStoreFinder);
     if (error != WP::kOk)
         return error;
-    error = fKeyStore->open(password);
+    error = keyStore->open(password);
     if (error != WP::kOk)
         return error;
 
@@ -222,7 +222,7 @@ WP::err Profile::addKeyStore(KeyStore *keyStore)
 
 void Profile::addKeyStore(KeyStoreRef *entry)
 {
-    fMapOfKeyStores[entry->getUserData()->getUid()] = entry;
+    mapOfKeyStores[entry->getUserData()->getUid()] = entry;
 }
 
 WP::err Profile::createNewUserIdentity(DatabaseBranch *branch, Mailbox *mailbox,
@@ -249,8 +249,8 @@ WP::err Profile::loadUserIdentities()
         if (entry->load(this) != WP::kOk)
             continue;
         UserIdentity *id = entry->getUserData();
-        Profile::ProfileKeyStoreFinder keyStoreFinder(fMapOfKeyStores);
-        Profile::ProfileMailboxFinder mailboxFinder(fMapOfMailboxes);
+        Profile::ProfileKeyStoreFinder keyStoreFinder(mapOfKeyStores);
+        Profile::ProfileMailboxFinder mailboxFinder(mapOfMailboxes);
         WP::err error = id->open(&keyStoreFinder, &mailboxFinder);
         if (error != WP::kOk){
             delete entry;
@@ -277,8 +277,8 @@ WP::err Profile::addUserIdentity(UserIdentity *identity)
 
 Mailbox *Profile::getMailboxAt(int index) const
 {
-    QMap<QString, MailboxRef*>::const_iterator it  = fMapOfMailboxes.begin();
-    for (int i = 0; it != fMapOfMailboxes.end() || i > index; i++) {
+    QMap<QString, MailboxRef*>::const_iterator it  = mapOfMailboxes.begin();
+    for (int i = 0; it != mapOfMailboxes.end() || i > index; i++) {
         if (i == index)
             return it.value()->getUserData();
     }
@@ -287,7 +287,7 @@ Mailbox *Profile::getMailboxAt(int index) const
 
 void Profile::addUserIdentity(IdentityRef *entry)
 {
-    fIdentities.addIdentity(entry);
+    identitiesListModel.addIdentity(entry);
 }
 
 WP::err Profile::createNewMailbox(DatabaseBranch *branch, Mailbox **mailboxOut)
@@ -313,7 +313,7 @@ WP::err Profile::loadMailboxes()
         if (entry->load(this) != WP::kOk)
             continue;
         Mailbox *mailbox = entry->getUserData();
-        Profile::ProfileKeyStoreFinder keyStoreFinder(fMapOfKeyStores);
+        Profile::ProfileKeyStoreFinder keyStoreFinder(mapOfKeyStores);
         WP::err error = mailbox->open(&keyStoreFinder);
         if (error != WP::kOk){
             delete entry;
@@ -340,7 +340,7 @@ WP::err Profile::addMailbox(Mailbox *mailbox)
 
 void Profile::addMailbox(MailboxRef *entry)
 {
-    fMapOfMailboxes[entry->getUserData()->getUid()] = entry;
+    mapOfMailboxes[entry->getUserData()->getUid()] = entry;
 }
 
 WP::err Profile::loadRemotes()
@@ -353,15 +353,15 @@ WP::err Profile::loadRemotes()
         StorageDirectory dir(this, prependBaseDir("remotes/" + remotesList.at(i)));
         if (remote->load(dir) != WP::kOk)
             continue;
-        fMapOfRemotes[remote->getUid()] = remote;
+        mapOfRemotes[remote->getUid()] = remote;
     }
     return WP::kOk;
 }
 
 RemoteDataStorage *Profile::findRemoteDataStorage(const QString &id)
 {
-    QMap<QString, RemoteDataStorage*>::iterator it = fMapOfRemotes.find(id);
-    if (it == fMapOfRemotes.end())
+    QMap<QString, RemoteDataStorage*>::iterator it = mapOfRemotes.find(id);
+    if (it == mapOfRemotes.end())
         return NULL;
     return it.value();
 }
@@ -425,43 +425,43 @@ WP::err Profile::loadDatabaseBranches()
 
 IdentityListModel *Profile::getIdentityList()
 {
-    return &fIdentities;
+    return &identitiesListModel;
 }
 
 
 QList<DatabaseBranch *> &Profile::getBranches()
 {
-    return fBranches;
+    return branchList;
 }
 
 void Profile::clear()
 {
     QMap<QString, KeyStoreRef*>::const_iterator it;
-    for (it = fMapOfKeyStores.begin(); it != fMapOfKeyStores.end(); it++)
+    for (it = mapOfKeyStores.begin(); it != mapOfKeyStores.end(); it++)
         delete it.value();
-    fMapOfKeyStores.clear();
+    mapOfKeyStores.clear();
 
-    while (fIdentities.rowCount() > 0)
-        delete fIdentities.removeIdentityAt(0);
+    while (identitiesListModel.rowCount() > 0)
+        delete identitiesListModel.removeIdentityAt(0);
 
-    for (int i = 0; i < fBranches.count(); i++)
-        delete fBranches.at(i);
-    fBranches.clear();
+    for (int i = 0; i < branchList.count(); i++)
+        delete branchList.at(i);
+    branchList.clear();
 }
 
 KeyStore *Profile::findKeyStore(const QString &keyStoreId)
 {
     QMap<QString, KeyStoreRef*>::const_iterator it;
-    it = fMapOfKeyStores.find(keyStoreId);
-    if (it == fMapOfKeyStores.end())
+    it = mapOfKeyStores.find(keyStoreId);
+    if (it == mapOfKeyStores.end())
         return NULL;
     return it.value()->getUserData();
 }
 
 DatabaseBranch *Profile::databaseBranchFor(const QString &database, const QString &branch)
 {
-    for (int i = 0; i < fBranches.count(); i++) {
-        DatabaseBranch *databaseBranch = fBranches.at(i);
+    for (int i = 0; i < branchList.count(); i++) {
+        DatabaseBranch *databaseBranch = branchList.at(i);
         if (databaseBranch->getDatabasePath() == database && databaseBranch->getBranch() == branch)
             return databaseBranch;
     }
@@ -469,7 +469,7 @@ DatabaseBranch *Profile::databaseBranchFor(const QString &database, const QStrin
     DatabaseBranch *databaseBranch = new DatabaseBranch(database, branch);
     if (databaseBranch == NULL)
         return NULL;
-    fBranches.append(databaseBranch);
+    branchList.append(databaseBranch);
     return databaseBranch;
 }
 
@@ -522,7 +522,7 @@ WP::err Profile::addRemoteDataStorage(RemoteDataStorage *remote)
     WP::err error = remote->write(dir);
     if (error != WP::kOk)
         return error;
-    fMapOfRemotes[remote->getUid()] = remote;
+    mapOfRemotes[remote->getUid()] = remote;
     return WP::kOk;
 }
 
@@ -535,8 +535,8 @@ WP::err Profile::connectRemote(DatabaseBranch *branch, RemoteDataStorage *remote
 RemoteDataStorage *Profile::findRemote(const QString &remoteId)
 {
     QMap<QString, RemoteDataStorage*>::iterator it;
-    it = fMapOfRemotes.find(remoteId);
-    if (it == fMapOfRemotes.end())
+    it = mapOfRemotes.find(remoteId);
+    if (it == mapOfRemotes.end())
         return NULL;
     return it.value();
 }
@@ -547,8 +547,8 @@ WP::err Profile::connectFreeBranches(RemoteDataStorage *remote)
     if (findRemoteDataStorage(remote->getUid()) ==  NULL)
         return WP::kEntryNotFound;
 
-    for (int i = 0; i < fBranches.count(); i++) {
-        DatabaseBranch *branch = fBranches.at(i);
+    for (int i = 0; i < branchList.count(); i++) {
+        DatabaseBranch *branch = branchList.at(i);
         connectRemote(branch, remote);
     }
     return WP::kOk;
@@ -557,8 +557,8 @@ WP::err Profile::connectFreeBranches(RemoteDataStorage *remote)
 KeyStore *Profile::ProfileKeyStoreFinder::find(const QString &keyStoreId)
 {
     QMap<QString, KeyStoreRef*>::const_iterator it;
-    it = fMapOfKeyStores.find(keyStoreId);
-    if (it == fMapOfKeyStores.end())
+    it = mapOfKeyStores.find(keyStoreId);
+    if (it == mapOfKeyStores.end())
         return NULL;
     return it.value()->getUserData();
 }
@@ -572,7 +572,7 @@ IdentityRef::IdentityRef(EncryptedUserData *database, const QString &path,
 
 UserIdentity *IdentityRef::instanciate()
 {
-    return new UserIdentity(fDatabaseBranch, fDatabaseBaseDir);
+    return new UserIdentity(databaseBranch, databaseBaseDir);
 }
 
 KeyStoreRef::KeyStoreRef(EncryptedUserData *database, const QString &path,
@@ -583,11 +583,11 @@ KeyStoreRef::KeyStoreRef(EncryptedUserData *database, const QString &path,
 
 KeyStore *KeyStoreRef::instanciate()
 {
-    return new KeyStore(fDatabaseBranch, fDatabaseBaseDir);
+    return new KeyStore(databaseBranch, databaseBaseDir);
 }
 
 Profile::ProfileKeyStoreFinder::ProfileKeyStoreFinder(QMap<QString, KeyStoreRef *> &map) :
-    fMapOfKeyStores(map)
+    mapOfKeyStores(map)
 {
 }
 
@@ -599,20 +599,20 @@ MailboxRef::MailboxRef(EncryptedUserData *database, const QString &path, Mailbox
 
 Mailbox *MailboxRef::instanciate()
 {
-    return new Mailbox(fDatabaseBranch, fDatabaseBaseDir);
+    return new Mailbox(databaseBranch, databaseBaseDir);
 }
 
 
 Profile::ProfileMailboxFinder::ProfileMailboxFinder(QMap<QString, MailboxRef *> &map) :
-    fMapOfKeyMailboxes(map)
+    mapOfKeyMailboxes(map)
 {
 }
 
 Mailbox *Profile::ProfileMailboxFinder::find(const QString &mailboxId)
 {
     QMap<QString, MailboxRef*>::const_iterator it;
-    it = fMapOfKeyMailboxes.find(mailboxId);
-    if (it == fMapOfKeyMailboxes.end())
+    it = mapOfKeyMailboxes.find(mailboxId);
+    if (it == mapOfKeyMailboxes.end())
         return NULL;
     return it.value()->getUserData();
 }

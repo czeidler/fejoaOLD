@@ -10,9 +10,9 @@ const char* kPathIdentityKeyId = "identity_key_id";
 
 
 UserIdentity::UserIdentity(DatabaseBranch *branch, const QString &baseDir) :
-    fMailbox(NULL),
-    fMyselfContact(NULL),
-    contactFinder(fContacts)
+    mailbox(NULL),
+    myselfContact(NULL),
+    contactFinder(contactList)
 {
     setToDatabase(branch, baseDir);
 }
@@ -20,7 +20,7 @@ UserIdentity::UserIdentity(DatabaseBranch *branch, const QString &baseDir) :
 UserIdentity::~UserIdentity()
 {
     // myself is in the contact list so don't delete
-    foreach (Contact *contact, fContacts)
+    foreach (Contact *contact, contactList)
         delete contact;
 }
 
@@ -32,29 +32,29 @@ WP::err UserIdentity::createNewIdentity(KeyStore *keyStore, const QString &defau
     QString certificate;
     QString publicKey;
     QString privateKey;
-    WP::err error = fCrypto->generateKeyPair(certificate, publicKey, privateKey, "");
+    WP::err error = crypto->generateKeyPair(certificate, publicKey, privateKey, "");
     if (error != WP::kOk)
         return error;
-    QByteArray hashResult = fCrypto->sha1Hash(certificate.toLatin1());
-    QString uidHex = fCrypto->toHex(hashResult);
+    QByteArray hashResult = crypto->sha1Hash(certificate.toLatin1());
+    QString uidHex = crypto->toHex(hashResult);
 
     // start creating the identity
     error = EncryptedUserData::create(uidHex, keyStore, defaultKeyId, addUidToBaseDir);
     if (error != WP::kOk)
         return error;
-    fMailbox = mailbox;
+    mailbox = mailbox;
 
     QString keyId;
-    error = fKeyStore->writeAsymmetricKey(certificate, publicKey, privateKey, keyId);
+    error = keyStore->writeAsymmetricKey(certificate, publicKey, privateKey, keyId);
     if (error != WP::kOk)
         return error;
 
-    fMyselfContact = new Contact(this, "myself");
-    error = fMyselfContact->createUserIdentityContact(keyStore, keyId);
+    myselfContact = new Contact(this, "myself");
+    error = myselfContact->createUserIdentityContact(keyStore, keyId);
     if (error != WP::kOk)
         return error;
 
-    error = write(kPathMailboxId, fMailbox->getUid());
+    error = write(kPathMailboxId, mailbox->getUid());
     if (error != WP::kOk)
         return error;
 
@@ -75,11 +75,11 @@ WP::err UserIdentity::open(KeyStoreFinder *keyStoreFinder, MailboxFinder *mailbo
     if (error != WP::kOk)
         return error;
 
-    fMyselfContact = new Contact(this, "myself");
-    error = fMyselfContact->open(keyStoreFinder);
+    myselfContact = new Contact(this, "myself");
+    error = myselfContact->open(keyStoreFinder);
     if (error != WP::kOk)
         return error;
-    fContacts.append(fMyselfContact);
+    contactList.append(myselfContact);
 
     QStringList contactNames = listDirectories("contacts");
     foreach (const QString &contactName, contactNames) {
@@ -90,29 +90,29 @@ WP::err UserIdentity::open(KeyStoreFinder *keyStoreFinder, MailboxFinder *mailbo
             delete contact;
             continue;
         }
-        fContacts.append(contact);
+        contactList.append(contact);
     }
 
-    fMailbox = mailboxFinder->find(mailboxId);
-        if (fMailbox == NULL)
+    mailbox = mailboxFinder->find(mailboxId);
+        if (mailbox == NULL)
             return WP::kEntryNotFound;
-    fMailbox->setOwner(this);
+    mailbox->setOwner(this);
     return error;
 }
 
 Mailbox *UserIdentity::getMailbox() const
 {
-    return fMailbox;
+    return mailbox;
 }
 
 Contact *UserIdentity::getMyself() const
 {
-    return fMyselfContact;
+    return myselfContact;
 }
 
 const QList<Contact *> &UserIdentity::getContacts()
 {
-    return fContacts;
+    return contactList;
 }
 
 WP::err UserIdentity::addContact(Contact *contact)
@@ -123,13 +123,13 @@ WP::err UserIdentity::addContact(Contact *contact)
     WP::err error = contact->writeConfig();
     if (error != WP::kOk)
         return error;
-    fContacts.append(contact);
+    contactList.append(contact);
     return WP::kOk;
 }
 
 Contact *UserIdentity::findContact(const QString &address)
 {
-    foreach (Contact *contact, fContacts) {
+    foreach (Contact *contact, contactList) {
         if (contact->getAddress() == address)
             return contact;
     }

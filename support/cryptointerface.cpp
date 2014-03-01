@@ -25,12 +25,12 @@ public:
 
 CryptoInterface::CryptoInterface()
 {
-    fPrivate = new Private;
+    p = new Private;
 }
 
 CryptoInterface::~CryptoInterface()
 {
-    delete fPrivate;
+    delete p;
 }
 
 void CryptoInterface::generateKeyPair(const char* certificateFile, const char *publicKeyFile, const char *privateKeyFile, const char *keyPassword)
