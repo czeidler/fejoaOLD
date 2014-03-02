@@ -57,10 +57,11 @@ MainApplication::MainApplication(int &argc, char *argv[]) :
 
     DatabaseBranch *branch = NULL;
     QList<DatabaseBranch*> &branches = profile->getBranches();
-    SyncManager *syncManager = new SyncManager(branches.at(0)->getRemoteAt(0));
+    syncManager = new SyncManager(branches.at(0)->getRemoteAt(0), this);
     foreach (branch, branches)
         syncManager->keepSynced(branch->getDatabase());
     syncManager->startWatching();
+    connect(syncManager, SIGNAL(connectionError()), this, SLOT(onSyncError()));
 
     mainWindow = new MainWindow(profile);
     mainWindow->show();
@@ -75,8 +76,14 @@ MainApplication::MainApplication(int &argc, char *argv[]) :
 
 }
 
+void MainApplication::onSyncError() {
+    syncManager->startWatching();
+}
+
 MainApplication::~MainApplication()
 {
+    syncManager->stopWatching();
+
     delete mainWindow;
     delete profile;
     CryptoInterfaceSingleton::destroy();
