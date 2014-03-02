@@ -93,17 +93,19 @@ HTTPConnectionReply::HTTPConnectionReply(QIODevice *device, QNetworkReply *reply
 
 void HTTPConnectionReply::abort()
 {
-    if (!networkReply->isFinished())
+    if (networkReply != NULL && !networkReply->isFinished())
         networkReply->abort();
 }
 
 void HTTPConnectionReply::finishedSlot()
 {
+    networkReply = NULL;
     emit finished(WP::kOk);
 }
 
 void HTTPConnectionReply::errorSlot(QNetworkReply::NetworkError code)
 {
+    networkReply = NULL;
     emit finished(WP::kError);
 }
 
