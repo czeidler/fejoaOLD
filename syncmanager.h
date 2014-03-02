@@ -50,6 +50,8 @@ private:
 
     void syncBranches(const QStringList &branches);
 
+    void handleConnectionError(WP::err error);
+
 signals:
     void connectionError();
 
@@ -66,6 +68,8 @@ private:
     RemoteAuthentication *authentication;
     RemoteConnection *remoteConnection;
     RemoteConnectionReply *serverReply;
+
+    bool watching;
 };
 
 #endif // SYNCMANAGER_H

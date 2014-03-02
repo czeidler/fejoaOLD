@@ -27,7 +27,8 @@ SyncManager::SyncManager(RemoteDataStorage *remoteDataStorage, QObject *parent) 
     remoteDataStorage(remoteDataStorage),
     authentication(remoteDataStorage->getRemoteAuthentication()),
     remoteConnection(remoteDataStorage->getRemoteConnection()),
-    serverReply(NULL)
+    serverReply(NULL),
+    watching(false)
 {
 }
 
@@ -47,6 +48,9 @@ WP::err SyncManager::keepSynced(DatabaseInterface *branch)
 
 void SyncManager::startWatching()
 {
+    if (watching)
+        return;
+
     if (authentication->isVerified())
         remoteAuthenticated(WP::kOk);
     else {
@@ -64,6 +68,8 @@ void SyncManager::restartWatching()
 
 void SyncManager::stopWatching()
 {
+    watching = false;
+
     if (serverReply != NULL) {
         serverReply->abort();
         serverReply = NULL;
@@ -81,10 +87,18 @@ void SyncManager::syncBranches(const QStringList &branches)
     }
 }
 
+void SyncManager::handleConnectionError(WP::err error)
+{
+    stopWatching();
+
+    authentication->logout();
+    emit connectionError();
+}
+
 void SyncManager::remoteAuthenticated(WP::err error)
 {
     if (error != WP::kOk) {
-        emit connectionError();
+        handleConnectionError(error);
         return;
     }
 
@@ -164,7 +178,7 @@ public:
 void SyncManager::watchReply(WP::err error)
 {
     if (error != WP::kOk) {
-        emit connectionError();
+        handleConnectionError(error);
         return;
     }
     if (serverReply == NULL)
@@ -185,7 +199,7 @@ void SyncManager::watchReply(WP::err error)
     inStream.parse();
 
     if (!watchHandler->hasBeenHandled()) {
-        emit connectionError();
+        handleConnectionError(WP::kError);
         return;
     }
 
