@@ -83,17 +83,12 @@ class ContactRequestStanzaHandler extends InStanzaHandler {
 	}
 
 	public function finished() {
-		if (Session::get()->getServerUser() != $this->serverUser) {
-			Session::get()->clear();
-			Session::get()->setServerUser($this->serverUser);
-		}
 		$publicKey = $this->publicKeyStanzaHandler->getPublicKey();
 		$certificate = $this->certificateStanzaHandler->getCertificate();
 
-		$userIdentity = Session::get()->getMainUserIdentity();
+		$userIdentity = Session::get()->getMainUserIdentity($this->serverUser);
 		if ($userIdentity === null) {
-			$this->printError("error", "can't find user: ".$this->serverUser);
-			Session::get()->clear();
+			$this->printError("error", "can't find server user: ".$this->serverUser);
 			return;
 		}
 
@@ -111,7 +106,7 @@ class ContactRequestStanzaHandler extends InStanzaHandler {
 		$stanza->addAttribute("status", "ok");
 
 		$myself = $userIdentity->getMyself();
-		$profile = Session::get()->getProfile();
+		$profile = Session::get()->getProfile($this->serverUser);
 		$keyStore = $profile->getUserIdentityKeyStore($userIdentity);
 		if ($keyStore === null) {
 			$this->printError("error", "internal error");

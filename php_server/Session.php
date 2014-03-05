@@ -4,11 +4,7 @@ include_once 'Profile.php';
 
 
 class Session {
-	private $database;
-	private $profile = null;
-
 	private function __construct() {
-		$this->database = null;
 	}
     
 	public static function get() {
@@ -23,41 +19,37 @@ class Session {
 		$this->setLoginUser("");
 		$this->setServerUser("");
 		$this->setUserRoles(array());
-		$this->profile = null;
-		$this->database = null;
 	}
 
-	public function getDatabase() {
-		if ($this->database !== null)
-			return $this->database;
-		$serverUser = $this->getServerUser();
-		if ($serverUser == "")
-			return null;
-		$databasePath = $serverUser."/.git";
+	public function getDatabase($user) {
+		$databasePath = $user."/.git";
 		if (!file_exists($databasePath))
 			return null;
 		return new GitDatabase($databasePath);
 	}
 
-	public function getProfile() {
-		if ($this->profile !== null)
-			return $this->profile;
-		$database = $this->getDatabase();
+	public function getProfile($user) {
+		$database = $this->getDatabase($user);
 		if ($database === null)
 			return null;
-		$this->profile = new Profile($database, "profile", "");
-		return $this->profile;
+		return new Profile($database, "profile", "");
 	}
 
-	public function getMainUserIdentity() {
-		$profile = $this->getProfile();
+	public function getMainUserIdentity($user) {
+		$profile = $this->getProfile($user);
 		if ($profile === null)
 			return null;
 		return $profile->getUserIdentityAt(0);
 	}
 
-	public function getUserDir() {
-		return $_SESSION['server_user'];
+	public function getAccountUser() {
+		if (!isset($_SESSION['account_user']))
+			return "";
+		return $_SESSION['account_user'];
+	}
+	
+	public function setAccountUser($user) {
+		$_SESSION['account_user'] = $user;
 	}
 
 	public function setSignatureToken($token) {
@@ -76,14 +68,14 @@ class Session {
 		return $_SESSION['login_user'];
 	}
 
-	public function setServerUser($user) {
-		$_SESSION['server_user'] = $user;
+	public function setLoginServerUser($user) {
+		$_SESSION['login_server_user'] = $user;
 	}
 
-	public function getServerUser() {
-		if (!isset($_SESSION['server_user']))
+	public function getLoginServerUser() {
+		if (!isset($_SESSION['login_server_user']))
 			return "";
-		return $_SESSION['server_user'];
+		return $_SESSION['login_server_user'];
 	}
 
 	public function setUserRoles($roles) {

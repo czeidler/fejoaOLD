@@ -22,7 +22,7 @@ class Profile extends UserData {
 			$result = $this->read("user_identities/".$identityId."/database_base_dir", $baseDir);
 			if (!$result)
 				continue;
-			$identity = new UserIdentity($this->database, $branch, $baseDir);
+			$identity = new UserIdentity($this, $branch, $baseDir);
 			$result = $identity->open();
 			if (!$result)
 				continue;
@@ -67,7 +67,9 @@ class Profile extends UserData {
 		if (!$result)
 			return null;
 
-		return new Mailbox($this->getDatabase(), $branch, $baseDir);
+		// TODO: find the right user identity in case there are more than one!
+		$userIdentity = $this->getUserIdentityAt(0);
+		return new Mailbox($userIdentity, $branch, $baseDir);
 	}
 }
 

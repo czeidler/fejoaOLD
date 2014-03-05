@@ -38,15 +38,14 @@ class AccountAuthStanzaHandler extends InStanzaHandler {
 		$signToken = "rand".rand()."time".time();
 		Session::get()->setSignatureToken($signToken);
 		Session::get()->setLoginUser($this->userName);
-		Session::get()->setServerUser($this->serverUser);
+		Session::get()->setLoginServerUser($this->serverUser);
 
 		// Check if the user has a change to login, i.e., if we know him
-		$userIdentity = Session::get()->getMainUserIdentity();
+		$userIdentity = Session::get()->getMainUserIdentity($this->serverUser);
 		// if $userIdentity is null the database is invalid give the user a change to upload a profile
 		if ($userIdentity != null) {
 			$contact = $userIdentity->findContact($this->userName);
 			if ($userIdentity->getMyself()->getUid() != $this->userName && $contact === null) {
-				Session::get()->clear();
 				// produce output
 				$outStream = new ProtocolOutStream();
 				$outStream->pushStanza(new IqOutStanza(IqType::$kResult));
@@ -93,7 +92,8 @@ class AccountAuthSignedStanzaHandler extends InStanzaHandler {
 	}
 
 	public function finished() {
-		$userIdentity = Session::get()->getMainUserIdentity();
+		$loginServerUser = Session::get()->getLoginServerUser();
+		$userIdentity = Session::get()->getMainUserIdentity($loginServerUser);
 
 		$roles = array();
 		if ($userIdentity != null) {
@@ -138,7 +138,7 @@ class AccountAuthSignedStanzaHandler extends InStanzaHandler {
 	}
 
 	private function setupLogin(&$roles) {
-		$signatureFileName = Session::get()->getServerUser()."/signature.pup";
+		$signatureFileName = Session::get()->getLoginServerUser()."/signature.pup";
 		$publickey = "";
 		if (file_exists($signatureFileName))
 			$publickey = file_get_contents($signatureFileName);
@@ -146,19 +146,22 @@ class AccountAuthSignedStanzaHandler extends InStanzaHandler {
 		$signatureVerifier = new SignatureVerifier($publickey);
 		if (!$signatureVerifier->verify(Session::get()->getSignatureToken(), $this->signature))
 			return;
+		Session::get()->setAccountUser(Session::get()->getLoginServerUser());
 		$roles[] =  "account";
 	}
 
 	private function accountLogin($contact, &$roles) {
 		if (!$contact->verify($contact->getMainKeyId(), Session::get()->getSignatureToken(), $this->signature))
 			return;
+		Session::get()->setAccountUser(Session::get()->getLoginServerUser());
 		$roles[] =  "account";
 	}
 
 	private function userLogin($contact, &$roles) {
 		if (!$contact->verify($contact->getMainKeyId(), Session::get()->getSignatureToken(), $this->signature))
 			return;
-		$roles[] = "contact_user";
+		$loginServerUser = Session::get()->getLoginServerUser();
+		$roles[] = $loginServerUser.":contact_user";
 	}
 }
 

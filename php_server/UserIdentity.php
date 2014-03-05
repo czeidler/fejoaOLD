@@ -6,10 +6,12 @@ include_once 'UserData.php';
 
 /*! The server side can't encrypt or decrypt data in the database so just derive from UserData. */
 class UserIdentity extends UserData {
+	private $profile;
 	private $contacts = array();
 
-	public function __construct($database, $branch, $directory) {
-		parent::__construct($database, $branch, $directory);
+	public function __construct($profile, $branch, $directory) {
+		parent::__construct($profile->getDatabase(), $branch, $directory);
+		$this->profile = $profile;
 	}
 
 	public function open() {
@@ -23,6 +25,10 @@ class UserIdentity extends UserData {
 			$this->contacts[] = $contact;
         }
         return true;
+	}
+
+	public function getProfile() {
+		return $this->profile;
 	}
 
 	public function getContacts() {

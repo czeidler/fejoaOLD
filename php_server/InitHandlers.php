@@ -8,7 +8,7 @@ include_once 'WatchBranchHandler.php';
 
 
 function initSyncHandlers($XMLHandler) {
-	$userDir = Session::get()->getUserDir();
+	$userDir = Session::get()->getAccountUser();
 	if (!file_exists ($userDir))
 		mkdir($userDir);
 	$database = new GitDatabase($userDir."/.git");
@@ -26,6 +26,7 @@ function initSyncHandlers($XMLHandler) {
 	$XMLHandler->addHandler($pushIqGetHandler);
 }
 
+// handle the initial sign in request and send out a sign request
 function initAccountAuthHandler($XMLHandler) {
 	$iqHandler = new InIqStanzaHandler(IqType::$kSet);
 	$handler = new AccountAuthStanzaHandler($XMLHandler->getInStream());
@@ -33,6 +34,7 @@ function initAccountAuthHandler($XMLHandler) {
 	$XMLHandler->addHandler($iqHandler);
 }
 
+// handle the sign response requested from the AccountAuthStanzaHandler
 function initAccountAuthSignedHandler($XMLHandler) {
 	$iqHandler = new InIqStanzaHandler(IqType::$kSet);
 	$handler = new AccountAuthSignedStanzaHandler($XMLHandler->getInStream());
@@ -85,14 +87,9 @@ class InitHandlers {
 		initContactRequestStanzaHandler($XMLHandler);
 	}
 
-	static public function initContactUserHandlers($XMLHandler) {
-		initAuthHandlers($XMLHandler);
-		initMessageHandlers($XMLHandler);
-		initWatchBranchesStanzaHandler($XMLHandler);
-	}
-
 	static public function initPublicHandlers($XMLHandler) {
 		initAuthHandlers($XMLHandler);
+		initMessageHandlers($XMLHandler);
 		initContactRequestStanzaHandler($XMLHandler);
 	}
 }

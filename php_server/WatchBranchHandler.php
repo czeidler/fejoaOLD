@@ -50,7 +50,7 @@ class WatchBranchesStanzaHandler extends InStanzaHandler {
 	}
 
 	public function finished() {
-		$database = Session::get()->getDatabase();
+		$database = Session::get()->getDatabase(Session::get()->getAccountUser());
 		if ($database === null)
 			throw new exception("unable to get database");
 

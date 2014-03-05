@@ -1,6 +1,5 @@
 <?php
 
-include_once 'Session.php';
 include_once 'UserData.php';
 
 
@@ -14,10 +13,12 @@ class SignedPackage {
 
 class Mailbox extends UserData {
 	private $lastErrorMessage;
+	private $userIdentity;
 
-	public function __construct($database, $branch, $directory) {
-		parent::__construct($database, $branch, $directory);
+	public function __construct($userIdentity, $branch, $directory) {
+		parent::__construct($userIdentity->getDatabase(), $branch, $directory);
 
+		$this->userIdentity = $userIdentity;
 	}
 
 	public function addChannel($channelId, $messageChannel) {
@@ -114,8 +115,7 @@ class Mailbox extends UserData {
 		$mainData = substr($package->data, $signatureLength + 4);
 		$hash = hash('sha256', $mainData);
 
-		$userIdentity = Session::get()->getMainUserIdentity();
-		$sender = $userIdentity->findContact($package->sender);
+		$sender = $this->userIdentity->findContact($package->sender);
 		if ($sender === null) {
 			$this->lastErrorMessage = "sender unknown";
 			return false;

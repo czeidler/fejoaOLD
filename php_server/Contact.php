@@ -5,8 +5,12 @@ include_once 'UserData.php';
 
 
 class Contact extends UserData {
-	public function __construct($userData, $directory) {
-		parent::__construct($userData->getDatabase(), $userData->getBranch(), $directory);
+	private $userIdentity;
+	
+	public function __construct($userIdentity, $directory) {
+		parent::__construct($userIdentity->getDatabase(), $userIdentity->getBranch(), $directory);
+		
+		$this->userIdentity = $userIdentity;
 	}
 
 	public function setUid($uid) {
@@ -33,9 +37,8 @@ class Contact extends UserData {
 		$keyStoreType;
 		$this->read("keystore_type", $keyStoreType);
 		if ($keyStoreType == "private") {
-			$profile = Session::get()->getProfile();
-			$userIdentity = Session::get()->getMainUserIdentity();
-			$keyStore = $profile->getUserIdentityKeyStore($userIdentity);
+			$profile = $this->userIdentity->getProfile();
+			$keyStore = $profile->getUserIdentityKeyStore($this->userIdentity);
 			$ok = $keyStore->readAsymmetricKey($keyId, $certificate, $publicKey);
 			if (!$ok)
 				return false;

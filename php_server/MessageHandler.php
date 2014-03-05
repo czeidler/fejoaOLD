@@ -33,7 +33,9 @@ class SignedPackageStanzaHandler extends InStanzaHandler {
 
 class MessageStanzaHandler extends InStanzaHandler {
 	private $inStreamReader;
+	private $lastErrorMessage = "";
 
+	private $receiver;
 	private $channelUid;
 	private $messageChannel;
 	private $channelInfo;
@@ -61,29 +63,57 @@ class MessageStanzaHandler extends InStanzaHandler {
 	}
 
 	public function handleStanza($xml) {
+		$this->receiver = $xml->getAttribute("server_user");
+		if ($this->receiver == "")
+			return false;
+		
 		$this->channelUid = $xml->getAttribute("channel");
 		return true;
 	}
 
-	public function finished() {
-		$profile = Session::get()->getProfile();
-		if ($profile === null)
-			throw new exception("unable to get profile");
+	private function putMessage() {
+		// login check, if not authenticated already return here
+		$roles = Session::Get()->getUserRoles();
+		if (!in_array($this->receiver.":contact_user", $roles)) {
+			$this->lastErrorMessage = "not authenticated";
+			return false;
+		}
 
+		$profile = Session::get()->getProfile($this->receiver);
+		if ($profile === null) {
+			$this->lastErrorMessage = "unable to get profile";
+			return false;
+		}
 		$mailbox = $profile->getMainMailbox();
-		if ($mailbox === null)
-			throw new exception("unable to get mailbox");
+		if ($mailbox === null) {
+			$this->lastErrorMessage = "unable to get mailbox";
+			return false;
+		}
 
-		$ok = true;
-		if ($this->channelStanzaHandler->hasBeenHandled())
-			$ok = $mailbox->addChannel($this->channelUid, $this->messageChannel);
-		if ($ok && $this->channelInfoStanzaHandler->hasBeenHandled())
-			$ok = $mailbox->addChannelInfo($this->channelUid, $this->channelInfo);
-		if ($ok)
-			$ok = $mailbox->addMessage($this->channelUid, $this->message);
-		if ($ok)
-			$ok = $mailbox->commit() !== null;
-	
+		if ($this->channelStanzaHandler->hasBeenHandled()) {
+			if (!$mailbox->addChannel($this->channelUid, $this->messageChannel)) {
+				$this->lastErrorMessage = $mailbox->getLastErrorMessage();
+				return false;
+			}
+		}
+		if ($this->channelInfoStanzaHandler->hasBeenHandled()) {
+			if (!$mailbox->addChannelInfo($this->channelUid, $this->channelInfo)) {
+				$this->lastErrorMessage = $mailbox->getLastErrorMessage();
+				return false;
+			}
+		}
+		if (!$mailbox->addMessage($this->channelUid, $this->message)) {
+			$this->lastErrorMessage = $mailbox->getLastErrorMessage();
+			return false;
+		}
+
+		$ok = $mailbox->commit() !== null;
+		return $ok;
+	}
+
+	public function finished() {
+		$ok = $this->putMessage();
+
 		// produce output
 		$outStream = new ProtocolOutStream();
 		$outStream->pushStanza(new IqOutStanza(IqType::$kResult));
@@ -93,7 +123,7 @@ class MessageStanzaHandler extends InStanzaHandler {
 			$stanza->addAttribute("status", "message_received");
 		else {
 			$stanza->addAttribute("status", "declined");
-			$stanza->addAttribute("error", $mailbox->getLastErrorMessage());
+			$stanza->addAttribute("error", $this->lastErrorMessage);
 		}
 		$outStream->pushChildStanza($stanza);
 

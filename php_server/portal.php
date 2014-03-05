@@ -142,15 +142,24 @@ $XMLHandler = new XMLHandler($request);
 $roles = Session::get()->getUserRoles();
 if (in_array("account", $roles))
 	InitHandlers::initPrivateHandlers($XMLHandler);
-else if (in_array("contact_user", $roles))
-	InitHandlers::initContactUserHandlers($XMLHandler);
 else
 	InitHandlers::initPublicHandlers($XMLHandler);
 
+// start working
+	
 $response = $XMLHandler->handle();
 
-// start working
 writeToOutput($response);
+
+// debug output:
+$debugStream = new ProtocolOutStream();
+$stanza = new OutStanza("debug");
+$stanza->addAttribute("account_user", Session::get()->getAccountUser());
+$stanza->addAttribute("login_user", Session::get()->getLoginServerUser());
+$stanza->addAttribute("session_id", session_id());
+$debugStream->pushStanza($stanza);
+writeToOutput($debugStream->flush());
+	
 finished();
 
 ?>
