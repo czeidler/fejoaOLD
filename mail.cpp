@@ -674,7 +674,7 @@ WP::err Message::readConfidentData(QBuffer &mainData)
     if (channelInfo == NULL)
         return WP::kBadValue;
 
-    body = readString(mainData).toLatin1();
+    body = mainData.readAll();
     return WP::kOk;
 }
 
