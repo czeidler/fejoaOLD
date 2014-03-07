@@ -45,8 +45,6 @@ private:
 };
 
 
-class SyncManager;
-
 class MainApplication : public QApplication
 {
 Q_OBJECT
@@ -56,9 +54,6 @@ public:
 
     QNetworkAccessManager* getNetworkAccessManager();
 
-private slots:
-    void onSyncError();
-
 private:
     WP::err createNewProfile();
 
@@ -66,7 +61,6 @@ private:
 
     Profile* profile;
     QNetworkAccessManager *networkAccessManager;
-    SyncManager *syncManager;
 };
 
 #endif // MAINAPPLICATION_H

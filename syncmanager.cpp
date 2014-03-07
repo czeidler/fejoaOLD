@@ -42,7 +42,8 @@ WP::err SyncManager::keepSynced(DatabaseInterface *branch)
     SyncEntry *entry = new SyncEntry(this, branch, this);
     syncEntries.append(entry);
 
-    restartWatching();
+    if (watching)
+        restartWatching();
     return WP::kOk;
 }
 
@@ -50,6 +51,9 @@ void SyncManager::startWatching()
 {
     if (watching)
         return;
+
+    watching = true;
+    emit syncStarted();
 
     if (authentication->isVerified())
         remoteAuthenticated(WP::kOk);
@@ -74,6 +78,8 @@ void SyncManager::stopWatching()
         serverReply->abort();
         serverReply = NULL;
     }
+
+    emit syncStopped();
 }
 
 void SyncManager::syncBranches(const QStringList &branches)

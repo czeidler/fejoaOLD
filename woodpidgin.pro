@@ -49,7 +49,8 @@ SOURCES += main.cpp \
     support/BigInteger/BigIntegerAlgorithms.cpp \
     support/BigInteger/BigInteger.cpp \
     support/BigInteger/BigUnsignedInABase.cc \
-    gui/newmessageview.cpp
+    gui/newmessageview.cpp \
+    gui/infostatuswidget.cpp
 
 # Installation path
 # target.path =
@@ -89,7 +90,8 @@ HEADERS += \
     support/BigInteger/BigInteger.hh \
     support/BigInteger/NumberlikeArray.hh \
     support/BigInteger/BigUnsignedInABase.hh \
-    gui/newmessageview.h
+    gui/newmessageview.h \
+    gui/infostatuswidget.h
 FORMS += \
     gui/mainwindow.ui \
     gui/createprofiledialog.ui \

@@ -3,7 +3,36 @@
 
 #include "useridentity.h"
 #include "useridentityview.h"
+#include "syncmanager.h"
 
+
+void SyncManagerGuiAdapter::setTo(SyncManager *manager, InfoStatusWidget *infoStatusWidget)
+{
+    this->syncManager = manager;
+    this->infoStatusWidget = infoStatusWidget;
+
+    connect(syncManager, SIGNAL(connectionError()), this, SLOT(onSyncError()));
+    connect(syncManager, SIGNAL(syncStarted()), this, SLOT(onSyncStarted()));
+    connect(syncManager, SIGNAL(syncStopped()), this, SLOT(onSyncStopped()));
+}
+
+#include <unistd.h>
+void SyncManagerGuiAdapter::onSyncError() {
+    usleep(1000);
+    syncManager->startWatching();
+
+    infoStatusWidget->info("sync error");
+}
+
+void SyncManagerGuiAdapter::onSyncStarted()
+{
+    infoStatusWidget->info("sync started");
+}
+
+void SyncManagerGuiAdapter::onSyncStopped()
+{
+    infoStatusWidget->info("sync stopped");
+}
 
 MainWindow::MainWindow(Profile *profile, QWidget *parent) :
     QMainWindow(parent),
@@ -38,11 +67,24 @@ MainWindow::MainWindow(Profile *profile, QWidget *parent) :
     progressBar = new QProgressBar(this);
     statusBar()->addWidget(progressBar);
 
+    infoStatusWidget = new InfoStatusWidget(this);
+    statusBar()->addWidget(infoStatusWidget);
+
     messageAction->setChecked(true);
+
+    // init fejoa stuff
+    DatabaseBranch *branch = NULL;
+    QList<DatabaseBranch*> &branches = profile->getBranches();
+    syncManager = new SyncManager(branches.at(0)->getRemoteAt(0), this);
+    foreach (branch, branches)
+        syncManager->keepSynced(branch->getDatabase());
+    syncManagerGuiAdapter.setTo(syncManager, infoStatusWidget);
+    syncManager->startWatching();
 }
 
 MainWindow::~MainWindow()
 {
+    delete syncManager;
     delete ui;
 }
 
@@ -57,3 +99,4 @@ void MainWindow::messageActionToggled(bool checked)
     if (checked)
         ui->stackedWidget->setCurrentWidget(messageView);
 }
+

@@ -26,7 +26,7 @@ private:
     QList<ILogger*> fLoggers;
 };
 
-// singleton + decorator
+// singleton + pseudo decorator
 class Log {
 public:
     static void installLogger(ILogger *logger);
@@ -41,7 +41,7 @@ private:
     static LoggerDispatcher *sLoggerDispatcher;
 };
 
-class StandardLogger {
+class StandardLogger : public ILogger {
 public:
     virtual void info(const QString &message);
     virtual void warning(const QString &message);

@@ -53,6 +53,8 @@ private:
     void handleConnectionError(WP::err error);
 
 signals:
+    void syncStarted();
+    void syncStopped();
     void connectionError();
 
 private slots:
