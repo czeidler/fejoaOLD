@@ -5,6 +5,7 @@
 
 #include "cryptointerface.h"
 #include "databaseinterface.h"
+#include "diffmonitor.h"
 #include "error_codes.h"
 
 
@@ -94,8 +95,7 @@ public:
     DatabaseInterface *getDatabase() const;
     void setBaseDir(const QString &baseDir);
 
-private slots:
-    virtual void onNewCommits(const QString &startCommit, const QString &endCommit);
+    DiffMonitor* getDiffMonitor();
 
 protected:
     void setUid(const QString &uid);
@@ -112,6 +112,7 @@ protected:
 
 private:
     QString uid;
+    DiffMonitor diffMonitor;
 };
 
 class KeyStore : public UserData {

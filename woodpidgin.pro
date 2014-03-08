@@ -50,7 +50,8 @@ SOURCES += main.cpp \
     support/BigInteger/BigInteger.cpp \
     support/BigInteger/BigUnsignedInABase.cc \
     gui/newmessageview.cpp \
-    gui/infostatuswidget.cpp
+    gui/infostatuswidget.cpp \
+    support/diffmonitor.cpp
 
 # Installation path
 # target.path =
@@ -91,7 +92,8 @@ HEADERS += \
     support/BigInteger/NumberlikeArray.hh \
     support/BigInteger/BigUnsignedInABase.hh \
     gui/newmessageview.h \
-    gui/infostatuswidget.h
+    gui/infostatuswidget.h \
+    support/diffmonitor.h
 FORMS += \
     gui/mainwindow.ui \
     gui/createprofiledialog.ui \

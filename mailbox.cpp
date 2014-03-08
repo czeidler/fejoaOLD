@@ -105,6 +105,8 @@ Mailbox::Mailbox(DatabaseBranch *branch, const QString &baseDir) :
     channelFinder(&threadList)
 {
     setToDatabase(branch, baseDir);
+
+    getDiffMonitor()->addWatcher(this);
 }
 
 Mailbox::~Mailbox()
@@ -312,7 +314,7 @@ MessageThread *Mailbox::findMessageThread(const QString &channelId)
     return NULL;
 }
 
-void Mailbox::onNewCommits(const QString &startCommit, const QString &endCommit)
+void Mailbox::onNewDiffs(const DatabaseDiff &diff)
 {
     readMailDatabase();
 }

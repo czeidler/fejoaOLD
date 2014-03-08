@@ -116,7 +116,8 @@ WP::err UserData::setToDatabase(DatabaseBranch *branch, const QString &baseDir)
     database = branch->getDatabase();
     if (database == NULL)
         return WP::kError;
-    connect(database, SIGNAL(newCommits(QString,QString)), this, SLOT(onNewCommits(QString,QString)));
+
+    diffMonitor.startWatching(database);
     return WP::kOk;
 }
 
@@ -125,9 +126,9 @@ void UserData::setBaseDir(const QString &baseDir)
     databaseBaseDir = baseDir;
 }
 
-void UserData::onNewCommits(const QString &startCommit, const QString &endCommit)
+DiffMonitor *UserData::getDiffMonitor()
 {
-
+    return &diffMonitor;
 }
 
 QString UserData::prependBaseDir(const QString &path) const

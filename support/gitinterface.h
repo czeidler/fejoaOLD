@@ -42,6 +42,8 @@ public:
     WP::err exportPack(QByteArray &pack, const QString &startCommit, const QString &endCommit, const QString &ignoreCommit, int format = -1) const;
     WP::err importPack(const QByteArray &pack, const QString &baseCommit, const QString &endCommit, int format = -1);
 
+    WP::err getDiff(const QString &baseCommit, const QString &endCommit, DatabaseDiff &databaseDiff);
+
 private:
     QStringList listDirectoryContent(const QString &path, int type = -1) const;
 
@@ -51,6 +53,8 @@ private:
     git_tree *getDirectoryTree(const QString &dirPath) const;
 
     QString removeFilename(QString &path) const;
+
+    git_tree *getCommitTree(const QString &commitHash) const;
 
 private:
     QString repositoryPath;

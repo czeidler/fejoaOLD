@@ -4,9 +4,33 @@
 #include <QObject>
 #include <QByteArray>
 #include <QString>
+#include <QStringList>
+#include <QVector>
 
 #include "error_codes.h"
 
+class DatabaseDir {
+public:
+    DatabaseDir(const QString &dirName = "");
+    ~DatabaseDir();
+
+    DatabaseDir *changeDirectory(const QString &path);
+
+    void addPath(const QString &path);
+
+    DatabaseDir *getChildDirectory(const QString dirName);
+
+    QString directoryName;
+    QList<DatabaseDir*> directories;
+    QStringList files;
+};
+
+class DatabaseDiff {
+public:
+    DatabaseDir added;
+    DatabaseDir modified;
+    DatabaseDir removed;
+};
 
 class DatabaseInterface : public QObject {
     Q_OBJECT
@@ -42,6 +66,9 @@ public:
     virtual WP::err exportPack(QByteArray &pack, const QString &startCommit, const QString &endCommit, const QString &ignoreCommit, int format = -1) const = 0;
     //! import pack, tries to merge and update the tip
     virtual WP::err importPack(const QByteArray &pack, const QString &baseCommit, const QString &endCommit, int format = -1) = 0;
+
+    // diff
+    virtual WP::err getDiff(const QString &baseCommit, const QString &endCommit, DatabaseDiff &diff) = 0;
 
 signals:
     void newCommits(const QString &startCommit, const QString &endCommit);

@@ -15,6 +15,8 @@ UserIdentity::UserIdentity(DatabaseBranch *branch, const QString &baseDir) :
     contactFinder(contactList)
 {
     setToDatabase(branch, baseDir);
+
+    getDiffMonitor()->addWatcher(this);
 }
 
 UserIdentity::~UserIdentity()
@@ -145,6 +147,11 @@ Contact *UserIdentity::findContactByUid(const QString &uid)
 ContactFinder *UserIdentity::getContactFinder()
 {
     return &contactFinder;
+}
+
+void UserIdentity::onNewDiffs(const DatabaseDiff &diff)
+{
+
 }
 
 WP::err UserIdentity::writePublicSignature(const QString &filename, const QString &publicKey)

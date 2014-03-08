@@ -10,6 +10,7 @@
 #include "cryptointerface.h"
 #include "databaseinterface.h"
 #include "databaseutil.h"
+#include "diffmonitor.h"
 #include "mailbox.h"
 
 
@@ -31,7 +32,7 @@ branch identities:
 --\contacts
 }
  */
-class UserIdentity : public EncryptedUserData
+class UserIdentity : public EncryptedUserData, public DiffMonitorWatcher
 {
 public:
     UserIdentity(DatabaseBranch *branch, const QString &baseDir = "");
@@ -50,6 +51,9 @@ public:
     Contact *findContactByUid(const QString &uid);
 
     ContactFinder *getContactFinder();
+
+    virtual void onNewDiffs(const DatabaseDiff &diff);
+
 private:
     class UserIdContactFinder : public ContactFinder {
     public:

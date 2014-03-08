@@ -28,7 +28,7 @@ private:
     QVector<MessageRef> messages;
 };
 
-class Mailbox : public EncryptedUserData
+class Mailbox : public EncryptedUserData, public DiffMonitorWatcher
 {
 Q_OBJECT
 public:
@@ -49,12 +49,11 @@ public:
 
     MessageThread *findMessageThread(const QString &channelId);
 
+    virtual void onNewDiffs(const DatabaseDiff &diff);
+
 signals:
     void databaseReadProgress(float progress);
     void databaseRead();
-
-private slots:
-    virtual void onNewCommits(const QString &startCommit, const QString &endCommit);
 
 private:
     class MailboxMessageChannelFinder : public MessageChannelFinder {

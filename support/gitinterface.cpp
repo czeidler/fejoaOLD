@@ -3,6 +3,7 @@
 #include <QCryptographicHash>
 #include <QDir>
 #include <QFile>
+#include <QSharedPointer>
 #include <QTextStream>
 
 class PackManager {
@@ -872,6 +873,63 @@ WP::err GitInterface::importPack(const QByteArray &pack, const QString &baseComm
     if (error == WP::kOk)
         emit newCommits(baseCommit, getTip());
     return error;
+}
+
+git_tree *GitInterface::getCommitTree(const QString &commitHash) const {
+    git_oid out;
+    int error = git_oid_fromstr(&out, commitHash.toLatin1());
+    if (error != 0)
+        return NULL;
+    git_commit *commit;
+    error = git_commit_lookup(&commit, repository, &out);
+    if (error != 0)
+        return NULL;
+
+    QSharedPointer<git_commit> commitDeleter(commit, git_commit_free);
+
+    git_tree *tree = NULL;
+    error = git_commit_tree(&tree, commit);
+    if (error != 0)
+        tree = NULL;
+    return tree;
+}
+
+int diffFileHandler(const git_diff_delta *delta, float progress, void *payload) {
+    DatabaseDiff *databaseDiff = (DatabaseDiff*)payload;
+
+    switch (delta->status) {
+    case GIT_DELTA_ADDED:
+        databaseDiff->added.addPath(delta->new_file.path);
+        break;
+    case GIT_DELTA_MODIFIED:
+        databaseDiff->modified.addPath(delta->new_file.path);
+        break;
+    case GIT_DELTA_DELETED:
+        databaseDiff->removed.addPath(delta->new_file.path);
+        break;
+    default:
+        return -1;
+    }
+    return 0;
+}
+
+WP::err GitInterface::getDiff(const QString &baseCommit, const QString &endCommit, DatabaseDiff &databaseDiff)
+{
+    QSharedPointer<git_tree> baseTree = QSharedPointer<git_tree>(getCommitTree(baseCommit), git_tree_free);
+    QSharedPointer<git_tree> endTree = QSharedPointer<git_tree>(getCommitTree(endCommit), git_tree_free);
+    if (baseTree == NULL || endTree == NULL)
+        return WP::kError;
+
+    git_diff *diff;
+    int error = git_diff_tree_to_tree(&diff, repository, baseTree.data(), endTree.data(), NULL);
+    if (error != 0)
+        return WP::kError;
+    QSharedPointer<git_diff> diffDeleter(diff, git_diff_free);
+
+    error = git_diff_foreach(diff, diffFileHandler, NULL, NULL, &databaseDiff);
+    if (error != 0)
+        return WP::kError;
+    return WP::kOk;
 }
 
 QStringList GitInterface::listDirectoryContent(const QString &path, int type) const

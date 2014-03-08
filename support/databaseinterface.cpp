@@ -39,3 +39,56 @@ WP::err DatabaseInterface::read(const QString &path, QString &data) const
     data = dataArray;
     return status;
 }
+
+
+DatabaseDir::DatabaseDir(const QString &dirName) :
+    directoryName(dirName)
+{
+}
+
+DatabaseDir::~DatabaseDir()
+{
+    foreach (DatabaseDir *dir, directories)
+        delete dir;
+}
+
+DatabaseDir *DatabaseDir::changeDirectory(const QString &path)
+{
+    QStringList parts = path.split("/");
+    DatabaseDir *currentDir = this;
+    foreach (const QString part, parts) {
+        currentDir = currentDir->getChildDirectory(part);
+        if (currentDir == NULL)
+            return NULL;
+    }
+    return currentDir;
+}
+
+void DatabaseDir::addPath(const QString &path)
+{
+    QStringList parts = path.split("/");
+    DatabaseDir *currentDir = this;
+    for (int i = 0; i < parts.size(); i++) {
+        const QString part = parts.at(i);
+        if (i == parts.size() - 1) {
+            currentDir->files.append(part);
+            return;
+        }
+
+        DatabaseDir *child = currentDir->getChildDirectory(part);
+        if (child == NULL) {
+            DatabaseDir *child = new DatabaseDir(part);
+            currentDir->directories.append(child);
+            currentDir = child;
+        }
+    }
+}
+
+DatabaseDir *DatabaseDir::getChildDirectory(const QString dirName)
+{
+    foreach (DatabaseDir *databaseDir, directories) {
+        if (databaseDir->directoryName == dirName)
+            return databaseDir;
+    }
+    return NULL;
+}
