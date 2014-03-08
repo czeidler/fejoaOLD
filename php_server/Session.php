@@ -60,6 +60,7 @@ class Session {
 		return $_SESSION['sign_token'];
 	}
 
+	// login user is a user who, for example, post a message to a server user account
 	public function setLoginUser($user) {
 		$_SESSION['login_user'] = $user;
 	}
@@ -68,6 +69,7 @@ class Session {
 		return $_SESSION['login_user'];
 	}
 
+	// server user is the user who has an account on the server
 	public function setLoginServerUser($user) {
 		$_SESSION['login_server_user'] = $user;
 	}

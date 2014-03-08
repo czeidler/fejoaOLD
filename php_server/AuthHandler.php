@@ -74,7 +74,7 @@ class AccountAuthStanzaHandler extends InStanzaHandler {
 
 class AccountAuthSignedStanzaHandler extends InStanzaHandler {
 	private $inStreamReader;
-
+	private $errorMessage = "";
 	private $signature;
 
 	public function __construct($inStreamReader) {
@@ -105,6 +105,8 @@ class AccountAuthSignedStanzaHandler extends InStanzaHandler {
 				$contact = $userIdentity->findContact($loginUser);
 				if ($contact !== null)
 					$this->userLogin($contact, $roles);
+				else
+					$this->errorMessage = "can't find user: ".$loginUser;
 			}
 		} else {
 			$this->setupLogin($roles);
@@ -121,6 +123,7 @@ class AccountAuthSignedStanzaHandler extends InStanzaHandler {
 		else
 			$status = "denied";
 		$stanza->addAttribute("status", $status);
+		$stanza->addAttribute("message", $this->errorMessage);
 		$outStream->pushChildStanza($stanza);
 		$roles = Session::get()->getUserRoles();
 		$firstRole = true;
@@ -144,22 +147,28 @@ class AccountAuthSignedStanzaHandler extends InStanzaHandler {
 			$publickey = file_get_contents($signatureFileName);
 
 		$signatureVerifier = new SignatureVerifier($publickey);
-		if (!$signatureVerifier->verify(Session::get()->getSignatureToken(), $this->signature))
+		if (!$signatureVerifier->verify(Session::get()->getSignatureToken(), $this->signature)) {
+			$this->errorMessage = "can't verify setup login";
 			return;
+		}
 		Session::get()->setAccountUser(Session::get()->getLoginServerUser());
 		$roles[] =  "account";
 	}
 
 	private function accountLogin($contact, &$roles) {
-		if (!$contact->verify($contact->getMainKeyId(), Session::get()->getSignatureToken(), $this->signature))
+		if (!$contact->verify($contact->getMainKeyId(), Session::get()->getSignatureToken(), $this->signature)) {
+			$this->errorMessage = "can't verify account login";
 			return;
+		}
 		Session::get()->setAccountUser(Session::get()->getLoginServerUser());
 		$roles[] =  "account";
 	}
 
 	private function userLogin($contact, &$roles) {
-		if (!$contact->verify($contact->getMainKeyId(), Session::get()->getSignatureToken(), $this->signature))
+		if (!$contact->verify($contact->getMainKeyId(), Session::get()->getSignatureToken(), $this->signature)) {
+			$this->errorMessage = "can't verify user login";
 			return;
+		}
 		$loginServerUser = Session::get()->getLoginServerUser();
 		$roles[] = $loginServerUser.":contact_user";
 	}
