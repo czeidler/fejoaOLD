@@ -59,7 +59,9 @@ UserIdentity *IdentityListModel::identityAt(int index)
     return identityList.at(index)->getUserData();
 }
 
-Profile::Profile(const QString &path, const QString &branchName)
+Profile::Profile(const QString &path, const QString &branchName) :
+    keyStoreFinder(mapOfKeyStores),
+    mailboxFinder(mapOfMailboxes)
 {
     DatabaseBranch *databaseBranch = databaseBranchFor(path, branchName);
     setToDatabase(databaseBranch, "");
@@ -148,7 +150,6 @@ WP::err Profile::open(const SecureArray &password)
     if (error != WP::kOk)
         return error;
 
-    Profile::ProfileKeyStoreFinder keyStoreFinder(mapOfKeyStores);
     error = EncryptedUserData::open(&keyStoreFinder);
     if (error != WP::kOk)
         return error;
@@ -251,8 +252,6 @@ WP::err Profile::loadUserIdentities()
         if (entry->load(this) != WP::kOk)
             continue;
         UserIdentity *id = entry->getUserData();
-        Profile::ProfileKeyStoreFinder keyStoreFinder(mapOfKeyStores);
-        Profile::ProfileMailboxFinder mailboxFinder(mapOfMailboxes);
         WP::err error = id->open(&keyStoreFinder, &mailboxFinder);
         if (error != WP::kOk){
             delete entry;
@@ -315,7 +314,6 @@ WP::err Profile::loadMailboxes()
         if (entry->load(this) != WP::kOk)
             continue;
         Mailbox *mailbox = entry->getUserData();
-        Profile::ProfileKeyStoreFinder keyStoreFinder(mapOfKeyStores);
         WP::err error = mailbox->open(&keyStoreFinder);
         if (error != WP::kOk){
             delete entry;
@@ -429,7 +427,6 @@ IdentityListModel *Profile::getIdentityList()
 {
     return &identitiesListModel;
 }
-
 
 QList<DatabaseBranch *> &Profile::getBranches()
 {

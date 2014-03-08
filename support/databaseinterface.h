@@ -14,11 +14,11 @@ public:
     DatabaseDir(const QString &dirName = "");
     ~DatabaseDir();
 
-    DatabaseDir *changeDirectory(const QString &path);
-
+    const DatabaseDir *findDirectory(const QString &path) const;
     void addPath(const QString &path);
 
-    DatabaseDir *getChildDirectory(const QString dirName);
+    QStringList getChildDirectories() const;
+    DatabaseDir *getChildDirectory(const QString dirName) const;
 
     QString directoryName;
     QList<DatabaseDir*> directories;

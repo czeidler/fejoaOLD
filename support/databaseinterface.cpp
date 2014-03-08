@@ -52,10 +52,10 @@ DatabaseDir::~DatabaseDir()
         delete dir;
 }
 
-DatabaseDir *DatabaseDir::changeDirectory(const QString &path)
+const DatabaseDir *DatabaseDir::findDirectory(const QString &path) const
 {
     QStringList parts = path.split("/");
-    DatabaseDir *currentDir = this;
+    const DatabaseDir *currentDir = this;
     foreach (const QString part, parts) {
         currentDir = currentDir->getChildDirectory(part);
         if (currentDir == NULL)
@@ -77,14 +77,22 @@ void DatabaseDir::addPath(const QString &path)
 
         DatabaseDir *child = currentDir->getChildDirectory(part);
         if (child == NULL) {
-            DatabaseDir *child = new DatabaseDir(part);
+            child = new DatabaseDir(part);
             currentDir->directories.append(child);
-            currentDir = child;
         }
+        currentDir = child;
     }
 }
 
-DatabaseDir *DatabaseDir::getChildDirectory(const QString dirName)
+QStringList DatabaseDir::getChildDirectories() const
+{
+    QStringList directoryList;
+    foreach (DatabaseDir *childDirectory, directories)
+        directoryList.append(childDirectory->directoryName);
+    return directoryList;
+}
+
+DatabaseDir *DatabaseDir::getChildDirectory(const QString dirName) const
 {
     foreach (DatabaseDir *databaseDir, directories) {
         if (databaseDir->directoryName == dirName)

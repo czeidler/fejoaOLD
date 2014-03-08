@@ -94,7 +94,7 @@ DatabaseBranch *UserData::getDatabaseBranch() const
     return databaseBranch;
 }
 
-QString UserData::getDatabaseBaseDir() const
+const QString& UserData::getDatabaseBaseDir() const
 {
     return databaseBaseDir;
 }

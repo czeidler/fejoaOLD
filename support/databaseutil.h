@@ -91,7 +91,7 @@ public:
     QStringList listFiles(const QString &path) const;
 
     DatabaseBranch *getDatabaseBranch() const;
-    QString getDatabaseBaseDir() const;
+    const QString &getDatabaseBaseDir() const;
     DatabaseInterface *getDatabase() const;
     void setBaseDir(const QString &baseDir);
 

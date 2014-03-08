@@ -102,6 +102,7 @@ private:
 
     WP::err writeDatabaseBranch(DatabaseBranch *databaseBranch);
     WP::err loadDatabaseBranches();
+
 private:
     class ProfileKeyStoreFinder : public KeyStoreFinder {
     public:
@@ -122,8 +123,10 @@ private:
     IdentityListModel identitiesListModel;
 
     QMap<QString, KeyStoreRef*> mapOfKeyStores;
+    ProfileKeyStoreFinder keyStoreFinder;
     QString mainMailbox;
     QMap<QString, MailboxRef*> mapOfMailboxes;
+    ProfileMailboxFinder mailboxFinder;
     QMap<QString, RemoteDataStorage*> mapOfRemotes;
 
     QList<DatabaseBranch*> branchList;

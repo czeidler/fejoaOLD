@@ -12,7 +12,9 @@ const char* kPathIdentityKeyId = "identity_key_id";
 UserIdentity::UserIdentity(DatabaseBranch *branch, const QString &baseDir) :
     mailbox(NULL),
     myselfContact(NULL),
-    contactFinder(contactList)
+    contactFinder(contactList),
+    keyStoreFinder(NULL),
+    mailboxFinder(NULL)
 {
     setToDatabase(branch, baseDir);
 
@@ -69,6 +71,9 @@ WP::err UserIdentity::createNewIdentity(KeyStore *keyStore, const QString &defau
 
 WP::err UserIdentity::open(KeyStoreFinder *keyStoreFinder, MailboxFinder *mailboxFinder)
 {
+    this->keyStoreFinder = keyStoreFinder;
+    this->mailboxFinder = mailboxFinder;
+
     WP::err error = EncryptedUserData::open(keyStoreFinder);
     if (error != WP::kOk)
         return error;
@@ -85,16 +90,7 @@ WP::err UserIdentity::open(KeyStoreFinder *keyStoreFinder, MailboxFinder *mailbo
     contactList.append(myselfContact);
 
     QStringList contactNames = listDirectories("contacts");
-    foreach (const QString &contactName, contactNames) {
-        QString path = "contacts/" + contactName;
-        Contact *contact = new Contact(this, path);
-        WP::err error = contact->open(keyStoreFinder);
-        if (error != WP::kOk) {
-            delete contact;
-            continue;
-        }
-        contactList.append(contact);
-    }
+    openContacts(contactNames);
 
     mailbox = mailboxFinder->find(mailboxId);
         if (mailbox == NULL)
@@ -151,7 +147,25 @@ ContactFinder *UserIdentity::getContactFinder()
 
 void UserIdentity::onNewDiffs(const DatabaseDiff &diff)
 {
+    const DatabaseDir* baseDir = diff.added.findDirectory(getDatabaseBaseDir());
+    if (baseDir != NULL) {
+        const DatabaseDir *contactDir = baseDir->findDirectory("contacts");
+        if (contactDir != NULL)
+            openContacts(contactDir->getChildDirectories());
+    }
+}
 
+void UserIdentity::openContacts(QStringList contactNames) {
+    foreach (const QString &contactName, contactNames) {
+        QString path = "contacts/" + contactName;
+        Contact *contact = new Contact(this, path);
+        WP::err error = contact->open(keyStoreFinder);
+        if (error != WP::kOk) {
+            delete contact;
+            continue;
+        }
+        contactList.append(contact);
+    }
 }
 
 WP::err UserIdentity::writePublicSignature(const QString &filename, const QString &publicKey)

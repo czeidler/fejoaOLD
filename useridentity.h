@@ -55,6 +55,8 @@ public:
     virtual void onNewDiffs(const DatabaseDiff &diff);
 
 private:
+    void openContacts(QStringList contactNames);
+
     class UserIdContactFinder : public ContactFinder {
     public:
         UserIdContactFinder(QList<Contact *> &contactList);
@@ -71,6 +73,9 @@ private:
     QList<Contact *> contactList;
 
     UserIdContactFinder contactFinder;
+
+    KeyStoreFinder *keyStoreFinder;
+    MailboxFinder *mailboxFinder;
 };
 
 #endif // USERIDENTITY_H
