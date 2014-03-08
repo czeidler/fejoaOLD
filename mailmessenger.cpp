@@ -97,7 +97,6 @@ void MailMessenger::authConnected(WP::err error)
     // write new channel info
     MessageChannelInfoRef info = message->getChannelInfo();
     if (info->isNewLocale()) {
-        info->setParticipantUid(targetContact->getAddress(), targetContact->getUid());
         error = XMLSecureParcel::write(&outStream, myself, signatureKeyId, info.data(),
                                        "channel_info");
         if (error != WP::kOk) {
@@ -189,7 +188,11 @@ WP::err MultiMailMessenger::postMessage(MessageRef message)
 {
     lastParticipantIndex = -1;
 
+
     this->message = message;
+
+//TODO set the uid at some point...
+//info->setParticipantUid(targetContact->getAddress(), targetContact->getUid());
 
     // store message
     WP::err error = mailbox->storeMessage(message);

@@ -179,11 +179,11 @@ RemoteConnectionReply *HTTPConnection::send(const QByteArray &data)
         return NULL;
 
     manager->disconnect(this);
-    connect(manager, SIGNAL(finished(QNetworkReply*)), this, SLOT(replyFinished(QNetworkReply*)));
-    //connect(reply, SIGNAL(error(QNetworkReply::NetworkError)), this, SLOT(replyError(QNetworkReply::NetworkError)));
 
     RemoteConnectionReply *remoteConnectionReply = createRemoteConnectionReply(reply);
     networkReplyMap.insert(reply, remoteConnectionReply);
+
+    connect(manager, SIGNAL(finished(QNetworkReply*)), this, SLOT(replyFinished(QNetworkReply*)));
 
     return remoteConnectionReply;
 }

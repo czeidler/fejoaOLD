@@ -18,10 +18,9 @@ void SyncManagerGuiAdapter::setTo(SyncManager *manager, InfoStatusWidget *infoSt
 
 #include <unistd.h>
 void SyncManagerGuiAdapter::onSyncError() {
+    infoStatusWidget->info("sync error");
     usleep(1000);
     syncManager->startWatching();
-
-    infoStatusWidget->info("sync error");
 }
 
 void SyncManagerGuiAdapter::onSyncStarted()
