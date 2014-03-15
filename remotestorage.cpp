@@ -5,7 +5,6 @@
 
 RemoteDataStorage::RemoteDataStorage(Profile *profile) :
     profile(profile),
-    connection(NULL),
     authentication(NULL)
 {
 }
@@ -35,31 +34,11 @@ const QString &RemoteDataStorage::getAuthType()
     return authType;
 }
 
-const QString &RemoteDataStorage::getAuthUserName()
-{
-    return authUserName;
-}
-
-const QString &RemoteDataStorage::getAuthKeyStoreId()
-{
-    return authKeyStoreId;
-}
-
-const QString &RemoteDataStorage::getAuthKeyId()
-{
-    return authKeyId;
-}
-
-const QString &RemoteDataStorage::getServerUser()
-{
-    return serverUser;
-}
-
 void RemoteDataStorage::setPHPEncryptedRemoteConnection(const QString &url)
 {
     connectionType = "PHPEncryptedRemoteStorage";
     this->url = url;
-    connection = ConnectionManager::connectionPHPFor(QUrl(url));
+    connectionInfo = ConnectionManager::getEncryptedPHPConnectionFor(QUrl(url));
     uid = hash();
 }
 
@@ -67,7 +46,7 @@ void RemoteDataStorage::setHTTPRemoteConnection(const QString &url)
 {
     connectionType = "HTTPRemoteStorage";
     this->url = url;
-    connection = ConnectionManager::connectionHTTPFor(QUrl(url));
+    connectionInfo = ConnectionManager::getHTTPConnectionFor(QUrl(url));
     uid = hash();
 }
 
@@ -75,24 +54,17 @@ void RemoteDataStorage::setSignatureAuth(const QString &userName, const QString 
                                          const QString &keyId, const QString &serverUser)
 {
     this->authType = "SignatureAuth";
-    this->authUserName = userName;
-    this->authKeyStoreId = keyStoreId;
-    this->authKeyId = keyId;
-    this->serverUser = serverUser;
-
-    delete authentication;
-    authentication = new SignatureAuthentication(connection, profile, authUserName,
-                                                  authKeyStoreId, authKeyId, serverUser);
+    this->authenticationInfo = RemoteAuthenticationInfo(userName, keyStoreId, keyId, serverUser);
 }
 
-RemoteConnection *RemoteDataStorage::getRemoteConnection()
+RemoteConnectionInfo RemoteDataStorage::getRemoteConnectionInfo()
 {
-    return connection;
+    return connectionInfo;
 }
 
-RemoteAuthentication *RemoteDataStorage::getRemoteAuthentication()
+RemoteAuthenticationInfo RemoteDataStorage::getRemoteAuthenticationInfo()
 {
-    return authentication;
+    return authenticationInfo;
 }
 
 QString RemoteDataStorage::hash()

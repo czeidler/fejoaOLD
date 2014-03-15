@@ -51,7 +51,8 @@ SOURCES += main.cpp \
     support/BigInteger/BigUnsignedInABase.cc \
     gui/newmessageview.cpp \
     gui/infostatuswidget.cpp \
-    support/diffmonitor.cpp
+    support/diffmonitor.cpp \
+    remoteconnectionmanager.cpp
 
 # Installation path
 # target.path =
@@ -93,7 +94,8 @@ HEADERS += \
     support/BigInteger/BigUnsignedInABase.hh \
     gui/newmessageview.h \
     gui/infostatuswidget.h \
-    support/diffmonitor.h
+    support/diffmonitor.h \
+    remoteconnectionmanager.h
 FORMS += \
     gui/mainwindow.ui \
     gui/createprofiledialog.ui \

@@ -7,6 +7,39 @@
 
 class Profile;
 
+class RemoteAuthenticationInfo {
+public:
+    enum RemoteAuthenticationType {
+        kSignature
+    };
+    RemoteAuthenticationInfo(QString userName, QString serverUser, QString keyStoreId, QString keyId);
+
+    friend bool operator== (RemoteConnectionInfo &info1, RemoteConnectionInfo &info2);
+    friend bool operator!= (RemoteConnectionInfo &info1, RemoteConnectionInfo &info2);
+
+    RemoteAuthenticationType getType() const;
+    void setType(const RemoteAuthenticationType &value);
+
+    QString getUserName() const;
+    void setUserName(const QString &value);
+
+    QString getServerUser() const;
+    void setServerUser(const QString &value);
+
+    QString getKeyStoreId() const;
+    void setKeyStoreId(const QString &value);
+
+    QString getKeyId() const;
+    void setKeyId(const QString &value);
+
+private:
+    RemoteAuthenticationType type;
+    QString userName;
+    QString serverUser;
+    QString keyStoreId;
+    QString keyId;
+};
+
 class RemoteAuthentication : public QObject
 {
 Q_OBJECT

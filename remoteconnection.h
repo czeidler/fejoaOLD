@@ -150,41 +150,27 @@ private:
     PHPEncryptionFilter *encryption;
 };
 
-
-
-template<class Type>
-class ConnectionBucket
-{
+class RemoteConnectionInfo {
 public:
-    Type *connectionFor(const QUrl &url) {
-        Type *connection = NULL;
-        QString hash = url.toString();
-        typename QMap<QString, Type*>::iterator it = connectionMap.find(hash);
-        if (it != connectionMap.end()) {
-            connection = it.value();
-        } else {
-            connection = new Type(QUrl(url));
-            if (connection == NULL)
-                return NULL;
-            connectionMap[hash] = connection;
-        }
-        return connection;
-    }
+    enum RemoteConnectionType {
+        kPlain,
+        kSecure,
+    };
+    RemoteConnectionInfo();
+    RemoteConnectionInfo& operator=(RemoteConnectionInfo info);
+
+    QUrl getUrl() const;
+    void setUrl(const QUrl &value);
+
+    RemoteConnectionType getType() const;
+    void setType(const RemoteConnectionType &value);
+
+    friend bool operator== (RemoteConnectionInfo &info1, RemoteConnectionInfo &info2);
+    friend bool operator!= (RemoteConnectionInfo &info1, RemoteConnectionInfo &info2);
 
 private:
-    QMap<QString, Type*> connectionMap;
-};
-
-
-class ConnectionManager {
-public:
-   static RemoteConnection *defaultConnectionFor(const QUrl &url);
-   static HTTPConnection *connectionHTTPFor(const QUrl &url);
-   static EncryptedPHPConnection *connectionPHPFor(const QUrl &url);
-
-private:
-    static ConnectionBucket<HTTPConnection> sHTTPConnectionBucket;
-    static ConnectionBucket<EncryptedPHPConnection> sPHPConnectionBucket;
+    QUrl url;
+    RemoteConnectionType type;
 };
 
 

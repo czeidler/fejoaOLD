@@ -2,6 +2,7 @@
 #define REMOTESTORAGE_H
 
 #include "databaseutil.h"
+#include "remoteauthentication.h"
 #include "remoteconnection.h"
 
 
@@ -22,13 +23,9 @@ public:
     const QString &getUrl();
 
     const QString &getAuthType();
-    const QString &getAuthUserName();
-    const QString &getAuthKeyStoreId();
-    const QString &getAuthKeyId();
-    const QString &getServerUser();
 
-    RemoteConnection *getRemoteConnection();
-    RemoteAuthentication *getRemoteAuthentication();
+    RemoteConnectionInfo getRemoteConnectionInfo();
+    RemoteAuthenticationInfo getRemoteAuthenticationInfo();
 
 private:
     friend class Profile;
@@ -42,19 +39,14 @@ private:
 
     Profile *profile;
 
-    RemoteConnection *connection;
-    RemoteAuthentication *authentication;
+    RemoteConnectionInfo connectionInfo;
+    RemoteAuthenticationInfo authenticationInfo;
 
     QString connectionType;
     QString url;
     QString uid;
 
-    QString serverUser;
-
     QString authType;
-    QString authUserName;
-    QString authKeyStoreId;
-    QString authKeyId;
 };
 
 #endif // REMOTESTORAGE_H

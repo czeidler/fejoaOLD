@@ -44,12 +44,10 @@ public:
     void startWatching();
     void stopWatching();
 
-
 private:
     void restartWatching();
 
     void syncBranches(const QStringList &branches);
-
     void handleConnectionError(WP::err error);
 
 signals:
@@ -63,6 +61,7 @@ private slots:
 
 private:
     friend class SyncEntry;
+    friend class PauseLock;
 
     RemoteDataStorage* remoteDataStorage;
     QList<SyncEntry*> syncEntries;

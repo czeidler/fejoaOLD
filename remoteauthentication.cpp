@@ -290,3 +290,83 @@ void SignatureAuthentication::handleAuthenticationAttempt(WP::err code)
     }
     setAuthenticationSucceeded();
 }
+
+QString RemoteAuthenticationInfo::getUserName() const
+{
+    return userName;
+}
+
+void RemoteAuthenticationInfo::setUserName(const QString &value)
+{
+    userName = value;
+}
+QString RemoteAuthenticationInfo::getServerUser() const
+{
+    return serverUser;
+}
+
+void RemoteAuthenticationInfo::setServerUser(const QString &value)
+{
+    serverUser = value;
+}
+QString RemoteAuthenticationInfo::getKeyStoreId() const
+{
+    return keyStoreId;
+}
+
+void RemoteAuthenticationInfo::setKeyStoreId(const QString &value)
+{
+    keyStoreId = value;
+}
+QString RemoteAuthenticationInfo::getKeyId() const
+{
+    return keyId;
+}
+
+void RemoteAuthenticationInfo::setKeyId(const QString &value)
+{
+    keyId = value;
+}
+
+RemoteAuthenticationInfo::RemoteAuthenticationInfo(QString userName, QString serverUser, QString keyStoreId, QString keyId) :
+    type(kSignature),
+    userName(userName),
+    serverUser(serverUser),
+    keyStoreId(keyStoreId),
+    keyId(keyId)
+{
+}
+
+bool RemoteAuthenticationInfo::operator==(RemoteConnectionInfo &info1, RemoteConnectionInfo &info2)
+{
+    if (info1.type != info2.type)
+        return false;
+    if (info1.userName != info2.userName)
+        return false;
+    if (info1.serverUser != info2.serverUser)
+        return false;
+    if (info1.keyStoreId != info2.keyStoreId)
+        return false;
+    if (info1.keyId != info2.keyId)
+        return false;
+    return true;
+}
+
+bool RemoteAuthenticationInfo::operator!=(RemoteConnectionInfo &info1, RemoteConnectionInfo &info2)
+{
+    return !(info1 == info2);
+}
+
+RemoteAuthenticationType RemoteAuthenticationInfo::getType() const
+{
+    return type;
+}
+
+void RemoteAuthenticationInfo::setType(const RemoteAuthenticationType &value)
+{
+    type = value;
+}
+
+
+
+

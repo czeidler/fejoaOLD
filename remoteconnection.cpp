@@ -369,21 +369,44 @@ EncryptedPHPConnectionReply::~EncryptedPHPConnectionReply()
     delete device;
 }
 
-
-ConnectionBucket<HTTPConnection> ConnectionManager::sHTTPConnectionBucket;
-ConnectionBucket<EncryptedPHPConnection> ConnectionManager::sPHPConnectionBucket;
-
-RemoteConnection *ConnectionManager::defaultConnectionFor(const QUrl &url)
+RemoteConnectionInfo::RemoteConnectionInfo() :
+    type(kPlain)
 {
-    return connectionHTTPFor(url);
+
 }
 
-HTTPConnection *ConnectionManager::connectionHTTPFor(const QUrl &url)
+QUrl RemoteConnectionInfo::getUrl() const
 {
-    return sHTTPConnectionBucket.connectionFor(url);
+    return url;
 }
 
-EncryptedPHPConnection *ConnectionManager::connectionPHPFor(const QUrl &url)
+void RemoteConnectionInfo::setUrl(const QUrl &value)
 {
-    return sPHPConnectionBucket.connectionFor(url);
+    url = value;
+}
+
+RemoteConnectionType RemoteConnectionInfo::getType() const
+{
+    return type;
+}
+
+void RemoteConnectionInfo::setType(const RemoteConnectionType &value)
+{
+    type = value;
+}
+
+bool RemoteConnectionInfo::operator==(RemoteConnectionInfo &info1, RemoteConnectionInfo &info2)
+{
+    if (info1.url != info2.url)
+        return false;
+
+    if (info1.type != info2.type)
+        return false;
+
+    return true;
+}
+
+bool RemoteConnectionInfo::operator!=(RemoteConnectionInfo &info1, RemoteConnectionInfo &info2)
+{
+    return !(info1 == info2);
 }
