@@ -23,28 +23,54 @@ public:
 
 
 SyncManager::SyncManager(RemoteDataStorage *remoteDataStorage, QObject *parent) :
-    QObject(parent),
+    RemoteConnectionJob(parent),
     remoteDataStorage(remoteDataStorage),
-    authentication(remoteDataStorage->getRemoteAuthentication()),
-    remoteConnection(remoteDataStorage->getRemoteConnection()),
+    authentication(NULL),
+    remoteConnection(NULL),
     serverReply(NULL),
+    jobQueue(NULL),
     watching(false)
 {
 }
 
 SyncManager::~SyncManager()
 {
-    stopWatching();
+    abort();
 }
 
 WP::err SyncManager::keepSynced(DatabaseInterface *branch)
 {
-    SyncEntry *entry = new SyncEntry(this, branch, this);
+    foreach (const RemoteSyncRef &ref, syncEntries) {
+        if (ref->getDatabase() == branch)
+            return WP::kOk;
+    }
+
+    RemoteSyncRef entry(new RemoteSync(branch, remoteDataStorage, this));
     syncEntries.append(entry);
 
     if (watching)
         restartWatching();
     return WP::kOk;
+}
+
+void SyncManager::run(RemoteConnectionJobQueue *jobQueue)
+{
+    this->jobQueue = jobQueue;
+    authentication = jobQueue->getRemoteAuthentication(
+                remoteDataStorage->getRemoteAuthenticationInfo(), remoteDataStorage->getProfile());
+    remoteConnection = jobQueue->getRemoteConnection();
+
+    startWatching();
+}
+
+void SyncManager::abort()
+{
+    watching = false;
+
+    if (serverReply != NULL) {
+        serverReply->abort();
+        serverReply = NULL;
+    }
 }
 
 void SyncManager::startWatching()
@@ -66,36 +92,22 @@ void SyncManager::startWatching()
 
 void SyncManager::restartWatching()
 {
-    stopWatching();
+    abort();
     startWatching();
-}
-
-void SyncManager::stopWatching()
-{
-    watching = false;
-
-    if (serverReply != NULL) {
-        serverReply->abort();
-        serverReply = NULL;
-    }
-
-    emit syncStopped();
 }
 
 void SyncManager::syncBranches(const QStringList &branches)
 {
-    foreach (SyncEntry *entry, syncEntries) {
-        if (entry->isSyncing())
-            continue;
+    foreach (const RemoteSyncRef &entry, syncEntries) {
         if (!branches.contains(entry->getDatabase()->branch()))
             continue;
-        entry->sync();
+        jobQueue->queue(entry);
     }
 }
 
 void SyncManager::handleConnectionError(WP::err error)
 {
-    stopWatching();
+    abort();
 
     authentication->logout();
     emit connectionError();
@@ -118,9 +130,7 @@ void SyncManager::remoteAuthenticated(WP::err error)
     outStream.pushChildStanza(watchStanza);
 
     bool first = true;
-    foreach (SyncEntry *entry, syncEntries) {
-        if (entry->isSyncing())
-            continue;
+    foreach (const RemoteSyncRef &entry, syncEntries) {
         OutStanza *item = new OutStanza("branch");
         item->addAttribute("branch", entry->getDatabase()->branch());
         item->addAttribute("tip", entry->getDatabase()->getTip());
@@ -217,46 +227,4 @@ void SyncManager::watchReply(WP::err error)
         return;
     } else // try again
         restartWatching();
-}
-
-
-SyncEntry::SyncEntry(SyncManager *syncManager, DatabaseInterface *database, QObject *parent) :
-    QObject(parent),
-    syncManager(syncManager),
-    database(database),
-    remoteSync(NULL)
-{
-}
-
-WP::err SyncEntry::sync()
-{
-    if (isSyncing())
-        return WP::kOk;
-    oldTip = database->getTip();
-    remoteSync = new RemoteSync(database, syncManager->remoteDataStorage, this);
-    connect(remoteSync, SIGNAL(syncFinished(WP::err)), this, SLOT(onSyncFinished(WP::err)));
-    WP::err error = remoteSync->sync();
-    if (error != WP::kOk) {
-        delete remoteSync;
-        remoteSync = NULL;
-    }
-    return error;
-}
-
-bool SyncEntry::isSyncing()
-{
-    return remoteSync != NULL ? true : false;
-}
-
-const DatabaseInterface *SyncEntry::getDatabase() const
-{
-    return database;
-}
-
-void SyncEntry::onSyncFinished(WP::err error)
-{
-    remoteSync->deleteLater();
-    remoteSync = NULL;
-    oldTip = "";
-    syncManager->restartWatching();
 }

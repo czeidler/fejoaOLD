@@ -1,17 +1,16 @@
 #include "remotestorage.h"
 
+#include "remoteconnectionmanager.h"
 #include "remoteauthentication.h"
 
 
 RemoteDataStorage::RemoteDataStorage(Profile *profile) :
-    profile(profile),
-    authentication(NULL)
+    profile(profile)
 {
 }
 
 RemoteDataStorage::~RemoteDataStorage()
 {
-    delete authentication;
 }
 
 QString RemoteDataStorage::getUid()
@@ -24,11 +23,6 @@ const QString &RemoteDataStorage::getConnectionType()
     return connectionType;
 }
 
-const QString &RemoteDataStorage::getUrl()
-{
-    return url;
-}
-
 const QString &RemoteDataStorage::getAuthType()
 {
     return authType;
@@ -37,7 +31,6 @@ const QString &RemoteDataStorage::getAuthType()
 void RemoteDataStorage::setPHPEncryptedRemoteConnection(const QString &url)
 {
     connectionType = "PHPEncryptedRemoteStorage";
-    this->url = url;
     connectionInfo = ConnectionManager::getEncryptedPHPConnectionFor(QUrl(url));
     uid = hash();
 }
@@ -45,7 +38,6 @@ void RemoteDataStorage::setPHPEncryptedRemoteConnection(const QString &url)
 void RemoteDataStorage::setHTTPRemoteConnection(const QString &url)
 {
     connectionType = "HTTPRemoteStorage";
-    this->url = url;
     connectionInfo = ConnectionManager::getHTTPConnectionFor(QUrl(url));
     uid = hash();
 }
@@ -67,10 +59,15 @@ RemoteAuthenticationInfo RemoteDataStorage::getRemoteAuthenticationInfo()
     return authenticationInfo;
 }
 
+Profile *RemoteDataStorage::getProfile()
+{
+    return profile;
+}
+
 QString RemoteDataStorage::hash()
 {
     CryptoInterface *crypto = CryptoInterfaceSingleton::getCryptoInterface();
-    QByteArray value = QString(connectionType + url).toLatin1();
+    QByteArray value = QString(connectionType + connectionInfo.getUrl().path()).toLatin1();
     QByteArray hashResult = crypto->sha1Hash(value);
     return crypto->toHex(hashResult);
 }
@@ -80,22 +77,22 @@ WP::err RemoteDataStorage::write(StorageDirectory &dir)
     WP::err error = dir.writeSafe("connection_type", getConnectionType());
     if (error != WP::kOk)
         return error;
-    error = dir.writeSafe("connection_url", getUrl());
+    error = dir.writeSafe("connection_url", connectionInfo.getUrl().path());
     if (error != WP::kOk)
         return error;
-    error = dir.writeSafe("auth_username", getAuthUserName());
+    error = dir.writeSafe("auth_username", authenticationInfo.getUserName());
     if (error != WP::kOk)
         return error;
     error = dir.writeSafe("auth_type", getAuthType());
     if (error != WP::kOk)
         return error;
-    error = dir.writeSafe("auth_keystore", getAuthKeyStoreId());
+    error = dir.writeSafe("auth_keystore", authenticationInfo.getKeyStoreId());
     if (error != WP::kOk)
         return error;
-    error = dir.writeSafe("auth_keyid", getAuthKeyId());
+    error = dir.writeSafe("auth_keyid", authenticationInfo.getKeyId());
     if (error != WP::kOk)
         return error;
-    error = dir.writeSafe("server_user", getServerUser());
+    error = dir.writeSafe("server_user", authenticationInfo.getServerUser());
     if (error != WP::kOk)
         return error;
 

@@ -385,7 +385,7 @@ void RemoteConnectionInfo::setUrl(const QUrl &value)
     url = value;
 }
 
-RemoteConnectionType RemoteConnectionInfo::getType() const
+RemoteConnectionInfo::RemoteConnectionType RemoteConnectionInfo::getType() const
 {
     return type;
 }
@@ -395,7 +395,7 @@ void RemoteConnectionInfo::setType(const RemoteConnectionType &value)
     type = value;
 }
 
-bool RemoteConnectionInfo::operator==(RemoteConnectionInfo &info1, RemoteConnectionInfo &info2)
+bool operator==(const RemoteConnectionInfo &info1, const RemoteConnectionInfo &info2)
 {
     if (info1.url != info2.url)
         return false;
@@ -406,7 +406,7 @@ bool RemoteConnectionInfo::operator==(RemoteConnectionInfo &info1, RemoteConnect
     return true;
 }
 
-bool RemoteConnectionInfo::operator!=(RemoteConnectionInfo &info1, RemoteConnectionInfo &info2)
+bool operator!=(const RemoteConnectionInfo &info1, const RemoteConnectionInfo &info2)
 {
     return !(info1 == info2);
 }

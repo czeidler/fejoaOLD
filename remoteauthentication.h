@@ -10,12 +10,14 @@ class Profile;
 class RemoteAuthenticationInfo {
 public:
     enum RemoteAuthenticationType {
+        kUnkown,
         kSignature
     };
+    RemoteAuthenticationInfo();
     RemoteAuthenticationInfo(QString userName, QString serverUser, QString keyStoreId, QString keyId);
 
-    friend bool operator== (RemoteConnectionInfo &info1, RemoteConnectionInfo &info2);
-    friend bool operator!= (RemoteConnectionInfo &info1, RemoteConnectionInfo &info2);
+    friend bool operator== (const RemoteAuthenticationInfo &info1, const RemoteAuthenticationInfo &info2);
+    friend bool operator!= (const RemoteAuthenticationInfo &info1, const RemoteAuthenticationInfo &info2);
 
     RemoteAuthenticationType getType() const;
     void setType(const RemoteAuthenticationType &value);
@@ -78,8 +80,7 @@ class SignatureAuthentication : public RemoteAuthentication {
 Q_OBJECT
 public:
     SignatureAuthentication(RemoteConnection *connection, Profile *profile,
-                            const QString &userName, const QString &keyStoreId,
-                            const QString &keyId, const QString &serverUser);
+                            const RemoteAuthenticationInfo &info);
 
 protected slots:
     void handleConnectionAttempt(WP::err code);
@@ -94,10 +95,7 @@ protected:
 
 private:
     Profile *profile;
-    QString userName;
-    QString serverUser;
-    QString keyStoreId;
-    QString keyId;
+    RemoteAuthenticationInfo authenticationInfo;
 
     QStringList roles;
 };

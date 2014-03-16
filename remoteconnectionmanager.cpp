@@ -1,15 +1,10 @@
 #include "remoteconnectionmanager.h"
 
 
-RemoteConnectionJob::RemoteConnectionJob(const RemoteConnectionInfo &info) :
-    remoteConnectionInfo(info)
+RemoteConnectionJob::RemoteConnectionJob(QObject *parent) :
+    QObject(parent)
 {
 
-}
-
-RemoteConnectionInfo &RemoteConnectionJob::getRemoteConnectionInfo()
-{
-    return remoteConnectionInfo;
 }
 
 RemoteConnectionJobQueue::RemoteConnectionJobQueue(RemoteConnection *connection) :
@@ -22,7 +17,8 @@ RemoteConnectionJobQueue::RemoteConnectionJobQueue(RemoteConnection *connection)
 
 RemoteConnectionJobQueue::~RemoteConnectionJobQueue()
 {
-    delete idleJob;
+    foreach (AuthenticationEntry *entry, authenticationList)
+        delete entry;
 }
 
 void RemoteConnectionJobQueue::start()
@@ -30,13 +26,13 @@ void RemoteConnectionJobQueue::start()
     reschedule();
 }
 
-WP::err RemoteConnectionJobQueue::queue(RemoteConnectionJob *job)
+void RemoteConnectionJobQueue::queue(RemoteConnectionJobRef job)
 {
     jobQueue.append(job);
     reschedule();
 }
 
-void RemoteConnectionJobQueue::setIdleJob(RemoteConnectionJob *job)
+void RemoteConnectionJobQueue::setIdleJob(RemoteConnectionJobRef job)
 {
     idleJob = job;
     reschedule();
@@ -69,6 +65,19 @@ void RemoteConnectionJobQueue::setRemoteConnection(RemoteConnection *value)
     remoteConnection = value;
 }
 
+RemoteAuthentication *RemoteConnectionJobQueue::getRemoteAuthentication(
+        const RemoteAuthenticationInfo &info, Profile *profile)
+{
+    foreach (AuthenticationEntry *entry, authenticationList) {
+        if (entry->authenticationInfo == info)
+            return entry->remoteAuthentication;
+    }
+    AuthenticationEntry *entry = new AuthenticationEntry(info, profile, remoteConnection);
+    authenticationList.append(entry);
+
+    return entry->remoteAuthentication;
+}
+
 void RemoteConnectionJobQueue::onJobDone(WP::err error)
 {
     if (runningJob != idleJob)
@@ -77,10 +86,10 @@ void RemoteConnectionJobQueue::onJobDone(WP::err error)
     reschedule();
 }
 
-void RemoteConnectionJobQueue::startJob(RemoteConnectionJob *job)
+void RemoteConnectionJobQueue::startJob(RemoteConnectionJobRef job)
 {
-    runningJob = idleJob;
-    runningJob->run(remoteConnection);
+    runningJob = job.data();
+    runningJob->run(this);
     connect(runningJob, SIGNAL(jobDone(WP::err)), this, SLOT(onJobDone(WP::err)));
 }
 
@@ -124,13 +133,28 @@ RemoteConnectionInfo ConnectionManager::getEncryptedPHPConnectionFor(const QUrl 
     return info;
 }
 
+static ConnectionManager *sConnectionManager = NULL;
+
+ConnectionManager *ConnectionManager::get()
+{
+    if (sConnectionManager == NULL)
+        sConnectionManager = new ConnectionManager;
+    return sConnectionManager;
+}
+
+ConnectionManager::ConnectionManager()
+{
+
+}
+
 ConnectionManager::ConnectionEntry::ConnectionEntry(const RemoteConnectionInfo &info)
 {
     this->info = info;
     this->jobQueue.setRemoteConnection(createRemoteConnection(info));
 }
 
-RemoteConnection *ConnectionManager::ConnectionEntry::createRemoteConnection(const RemoteConnectionInfo &info)
+RemoteConnection *ConnectionManager::ConnectionEntry::createRemoteConnection(
+        const RemoteConnectionInfo &info)
 {
     if (info.getType() == RemoteConnectionInfo::kPlain)
         return new HTTPConnection(info.getUrl());
@@ -138,4 +162,14 @@ RemoteConnection *ConnectionManager::ConnectionEntry::createRemoteConnection(con
         return new EncryptedPHPConnection(info.getUrl());
 
     return NULL;
+}
+
+
+RemoteConnectionJobQueue::AuthenticationEntry::AuthenticationEntry(
+        const RemoteAuthenticationInfo &info, Profile *profile, RemoteConnection *remoteConnection) :
+    remoteAuthentication(NULL)
+{
+    authenticationInfo = info;
+    if (authenticationInfo.getType() == RemoteAuthenticationInfo::kSignature)
+        remoteAuthentication = new SignatureAuthentication(remoteConnection, profile, info);
 }

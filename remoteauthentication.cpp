@@ -77,16 +77,11 @@ const char *kAuthStanza = "auth";
 const char *kAuthSignedStanza = "auth_signed";
 
 SignatureAuthentication::SignatureAuthentication(RemoteConnection *connection,
-                                                 Profile *_profile,
-                                                 const QString &_userName,
-                                                 const QString &_keyStoreId,
-                                                 const QString &_keyId, const QString &_serverUser) :
+                                                 Profile *profile,
+                                                 const RemoteAuthenticationInfo &info) :
     RemoteAuthentication(connection),
-    profile(_profile),
-    userName(_userName),
-    serverUser(_serverUser),
-    keyStoreId(_keyStoreId),
-    keyId(_keyId)
+    profile(profile),
+    authenticationInfo(info)
 {
 }
 
@@ -99,8 +94,8 @@ void SignatureAuthentication::getLoginRequestData(QByteArray &data)
 
     OutStanza *authStanza =  new OutStanza(kAuthStanza);
     authStanza->addAttribute("type", "signature");
-    authStanza->addAttribute("user", userName);
-    authStanza->addAttribute("server_user", serverUser);
+    authStanza->addAttribute("user", authenticationInfo.getUserName());
+    authStanza->addAttribute("server_user", authenticationInfo.getServerUser());
     outStream.pushChildStanza(authStanza);
 
     outStream.flush();
@@ -147,14 +142,15 @@ WP::err SignatureAuthentication::getLoginData(QByteArray &data, const QByteArray
     if (userAuthHandler->status != "sign_this_token")
         return WP::kError;
 
-    KeyStore *keyStore = profile->findKeyStore(keyStoreId);
+    KeyStore *keyStore = profile->findKeyStore(authenticationInfo.getKeyStoreId());
     if (keyStore == NULL)
         return WP::kEntryNotFound;
 
     QString certificate;
     QString publicKey;
     QString privateKey;
-    WP::err error = keyStore->readAsymmetricKey(keyId, certificate, publicKey, privateKey);
+    WP::err error = keyStore->readAsymmetricKey(authenticationInfo.getKeyId(), certificate,
+                                                publicKey, privateKey);
     if (error != WP::kOk)
         return error;
 
@@ -328,6 +324,12 @@ void RemoteAuthenticationInfo::setKeyId(const QString &value)
     keyId = value;
 }
 
+RemoteAuthenticationInfo::RemoteAuthenticationInfo() :
+    type(kUnkown)
+{
+
+}
+
 RemoteAuthenticationInfo::RemoteAuthenticationInfo(QString userName, QString serverUser, QString keyStoreId, QString keyId) :
     type(kSignature),
     userName(userName),
@@ -337,7 +339,7 @@ RemoteAuthenticationInfo::RemoteAuthenticationInfo(QString userName, QString ser
 {
 }
 
-bool RemoteAuthenticationInfo::operator==(RemoteConnectionInfo &info1, RemoteConnectionInfo &info2)
+bool operator==(const RemoteAuthenticationInfo &info1, const RemoteAuthenticationInfo &info2)
 {
     if (info1.type != info2.type)
         return false;
@@ -352,12 +354,12 @@ bool RemoteAuthenticationInfo::operator==(RemoteConnectionInfo &info1, RemoteCon
     return true;
 }
 
-bool RemoteAuthenticationInfo::operator!=(RemoteConnectionInfo &info1, RemoteConnectionInfo &info2)
+bool operator!=(const RemoteAuthenticationInfo &info1, const RemoteAuthenticationInfo &info2)
 {
     return !(info1 == info2);
 }
 
-RemoteAuthenticationType RemoteAuthenticationInfo::getType() const
+RemoteAuthenticationInfo::RemoteAuthenticationType RemoteAuthenticationInfo::getType() const
 {
     return type;
 }

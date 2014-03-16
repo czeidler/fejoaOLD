@@ -5,20 +5,21 @@
 #include "mail.h"
 #include "mailbox.h"
 #include "remoteauthentication.h"
+#include "remoteconnectionmanager.h"
 
 class Profile;
 class UserIdentity;
 
-class MailMessenger : public QObject {
+class MailMessenger : public RemoteConnectionJob {
 Q_OBJECT
 public:
     MailMessenger(Mailbox *mailbox, const MessageChannelInfo::Participant *receiver, Profile *profile);
     ~MailMessenger();
 
-    WP::err postMessage(MessageRef message);
+    virtual void run(RemoteConnectionJobQueue *jobQueue);
+    virtual void abort();
 
-signals:
-    void sendResult(WP::err error);
+    QString getTargetServer();
 
 private slots:
     void handleReply(WP::err error);
@@ -33,6 +34,7 @@ private:
 
     UserIdentity *userIdentity;
     const MessageChannelInfo::Participant *receiver;
+    Profile *profile;
     QString targetServer;
     QString targetUser;
 
@@ -46,6 +48,8 @@ private:
     RemoteConnectionReply *serverReply;
     RemoteAuthentication *authentication;
 };
+
+typedef QSharedPointer<MailMessenger> MailMessengerRef;
 
 
 class MultiMailMessenger : public QObject {

@@ -6,20 +6,20 @@
 #include "databaseinterface.h"
 #include "error_codes.h"
 #include "profile.h"
-#include "remoteconnection.h"
+#include "remoteconnectionmanager.h"
 
-
-class RemoteSync : public QObject
+// preforms a push or pull
+class RemoteSync : public RemoteConnectionJob    
 {
-    Q_OBJECT
+Q_OBJECT
 public:
     explicit RemoteSync(DatabaseInterface *database, RemoteDataStorage* remoteStorage, QObject *parent = 0);
     ~RemoteSync();
 
-    WP::err sync();
+    virtual void run(RemoteConnectionJobQueue *jobQueue);
+    virtual void abort();
 
-signals:
-    void syncFinished(WP::err status);
+    DatabaseInterface *getDatabase();
 
 private slots:
     void syncConnected(WP::err code);
@@ -35,5 +35,7 @@ private:
 
     QString syncUid;
 };
+
+typedef QSharedPointer<RemoteSync> RemoteSyncRef;
 
 #endif // REMOTESYNC_H

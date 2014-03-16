@@ -16,11 +16,8 @@ void SyncManagerGuiAdapter::setTo(SyncManager *manager, InfoStatusWidget *infoSt
     connect(syncManager, SIGNAL(syncStopped()), this, SLOT(onSyncStopped()));
 }
 
-#include <unistd.h>
 void SyncManagerGuiAdapter::onSyncError() {
     infoStatusWidget->info("sync error");
-    usleep(1000);
-    syncManager->startWatching();
 }
 
 void SyncManagerGuiAdapter::onSyncStarted()
@@ -74,16 +71,19 @@ MainWindow::MainWindow(Profile *profile, QWidget *parent) :
     // init fejoa stuff
     DatabaseBranch *branch = NULL;
     QList<DatabaseBranch*> &branches = profile->getBranches();
-    syncManager = new SyncManager(branches.at(0)->getRemoteAt(0), this);
+    RemoteDataStorage *remoteStorage = branches.at(0)->getRemoteAt(0);
+    SyncManagerRef syncManager(new SyncManager(remoteStorage, this));
     foreach (branch, branches)
         syncManager->keepSynced(branch->getDatabase());
-    syncManagerGuiAdapter.setTo(syncManager, infoStatusWidget);
-    syncManager->startWatching();
+    syncManagerGuiAdapter.setTo(syncManager.data(), infoStatusWidget);
+
+    RemoteConnectionJobQueue *queue = ConnectionManager::get()->getConnectionJobQueue(
+                remoteStorage->getRemoteConnectionInfo());
+    queue->setIdleJob(syncManager);
 }
 
 MainWindow::~MainWindow()
 {
-    delete syncManager;
     delete ui;
 }
 

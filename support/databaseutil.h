@@ -7,6 +7,8 @@
 #include "databaseinterface.h"
 #include "diffmonitor.h"
 #include "error_codes.h"
+#include "remoteauthentication.h"
+#include "remoteconnection.h"
 
 
 class EncryptedUserData;
@@ -42,8 +44,6 @@ protected:
 
 
 class RemoteDataStorage;
-class RemoteConnection;
-class RemoteAuthentication;
 
 class DatabaseBranch {
 public:
@@ -59,8 +59,8 @@ public:
     WP::err commit();
     int countRemotes() const;
     RemoteDataStorage *getRemoteAt(int i) const;
-    RemoteConnection *getRemoteConnectionAt(int i) const;
-    RemoteAuthentication *getRemoteAuthAt(int i) const;
+    RemoteConnectionInfo getRemoteConnectionAt(int i) const;
+    RemoteAuthenticationInfo getRemoteAuthAt(int i) const;
     WP::err addRemote(RemoteDataStorage* data);
 private:
     QString databasePath;

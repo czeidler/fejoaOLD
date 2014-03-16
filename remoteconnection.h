@@ -157,7 +157,6 @@ public:
         kSecure,
     };
     RemoteConnectionInfo();
-    RemoteConnectionInfo& operator=(RemoteConnectionInfo info);
 
     QUrl getUrl() const;
     void setUrl(const QUrl &value);
@@ -165,8 +164,8 @@ public:
     RemoteConnectionType getType() const;
     void setType(const RemoteConnectionType &value);
 
-    friend bool operator== (RemoteConnectionInfo &info1, RemoteConnectionInfo &info2);
-    friend bool operator!= (RemoteConnectionInfo &info1, RemoteConnectionInfo &info2);
+    friend bool operator== (const RemoteConnectionInfo &info1, const RemoteConnectionInfo &info2);
+    friend bool operator!= (const RemoteConnectionInfo &info1, const RemoteConnectionInfo &info2);
 
 private:
     QUrl url;

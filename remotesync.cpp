@@ -6,11 +6,11 @@
 
 
 RemoteSync::RemoteSync(DatabaseInterface *database, RemoteDataStorage* remoteStorage, QObject *parent) :
-    QObject(parent),
+    RemoteConnectionJob(parent),
     database(database),
     remoteStorage(remoteStorage),
-    authentication(remoteStorage->getRemoteAuthentication()),
-    remoteConnection(remoteStorage->getRemoteAuthentication()->getConnection()),
+    authentication(NULL),
+    remoteConnection(NULL),
     serverReply(NULL)
 {
 }
@@ -19,8 +19,12 @@ RemoteSync::~RemoteSync()
 {
 }
 
-WP::err RemoteSync::sync()
+void RemoteSync::run(RemoteConnectionJobQueue *jobQueue)
 {
+    remoteConnection = jobQueue->getRemoteConnection();
+    authentication = jobQueue->getRemoteAuthentication(remoteStorage->getRemoteAuthenticationInfo(),
+                                                       remoteStorage->getProfile());
+
     if (authentication->isVerified())
         syncConnected(WP::kOk);
     else {
@@ -28,7 +32,19 @@ WP::err RemoteSync::sync()
                 this, SLOT(syncConnected(WP::err)));
         authentication->login();
     }
-    return WP::kOk;
+}
+
+void RemoteSync::abort()
+{
+    if (serverReply != NULL) {
+        serverReply->abort();
+        serverReply = NULL;
+    }
+}
+
+DatabaseInterface *RemoteSync::getDatabase()
+{
+    return database;
 }
 
 void RemoteSync::syncConnected(WP::err code)
@@ -145,12 +161,12 @@ void RemoteSync::syncReply(WP::err code)
     if (!syncPullHandler->hasBeenHandled() || syncPullData.branch != localBranch) {
         // error occured, the server should at least send back the branch name
         // TODO better error message
-        emit syncFinished(WP::kBadValue);
+        emit jobDone(WP::kBadValue);
         return;
     }
     if (syncPullData.tip == localTipCommit) {
         // done
-        emit syncFinished(WP::kOk);
+        emit jobDone(WP::kOk);
         return;
     }
     // see if the server is ahead by checking if we got packages
@@ -159,14 +175,14 @@ void RemoteSync::syncReply(WP::err code)
         WP::err error = database->importPack(syncPullData.pack, lastSyncCommit,
                                               syncPullData.tip);
         if (error != WP::kOk) {
-            emit syncFinished(error);
+            emit jobDone(error);
             return;
         }
 
         localTipCommit = database->getTip();
         // done? otherwise it was a merge and we have to push our merge
         if (localTipCommit == lastSyncCommit) {
-            emit syncFinished(WP::kOk);
+            emit jobDone(WP::kOk);
             return;
         }
     }
@@ -175,7 +191,7 @@ void RemoteSync::syncReply(WP::err code)
     QByteArray pack;
     WP::err error = database->exportPack(pack, lastSyncCommit, localTipCommit, syncUid);
     if (error != WP::kOk) {
-        emit syncFinished(error);
+        emit jobDone(error);
         return;
     }
     syncUid = localTipCommit;
@@ -208,5 +224,5 @@ void RemoteSync::syncPushReply(WP::err code)
     QByteArray data = serverReply->readAll();
 
     database->updateLastSyncCommit(remoteStorage->getUid(), database->branch(), syncUid);
-    emit syncFinished(WP::kOk);
+    emit jobDone(WP::kOk);
 }

@@ -659,14 +659,14 @@ RemoteDataStorage *DatabaseBranch::getRemoteAt(int i) const
     return remotes.at(i);
 }
 
-RemoteConnection *DatabaseBranch::getRemoteConnectionAt(int i) const
+RemoteConnectionInfo DatabaseBranch::getRemoteConnectionAt(int i) const
 {
-    return remotes.at(i)->getRemoteConnection();
+    return remotes.at(i)->getRemoteConnectionInfo();
 }
 
-RemoteAuthentication *DatabaseBranch::getRemoteAuthAt(int i) const
+RemoteAuthenticationInfo DatabaseBranch::getRemoteAuthAt(int i) const
 {
-    return remotes.at(i)->getRemoteAuthentication();
+    return remotes.at(i)->getRemoteAuthenticationInfo();
 }
 
 WP::err DatabaseBranch::addRemote(RemoteDataStorage *data)

@@ -9,6 +9,10 @@
 class Profile;
 class RemoteAuthentication;
 
+/*!
+ * \brief The RemoteDataStorage class hold all the informations for a remote storage branch.
+ * For example, where the storage is located and what authentication is to be used.
+ */
 class RemoteDataStorage {
 public:
     RemoteDataStorage(Profile *profile);
@@ -20,12 +24,12 @@ public:
     QString getUid();
 
     const QString &getConnectionType();
-    const QString &getUrl();
-
     const QString &getAuthType();
 
     RemoteConnectionInfo getRemoteConnectionInfo();
     RemoteAuthenticationInfo getRemoteAuthenticationInfo();
+
+    Profile *getProfile();
 
 private:
     friend class Profile;
@@ -43,7 +47,6 @@ private:
     RemoteAuthenticationInfo authenticationInfo;
 
     QString connectionType;
-    QString url;
     QString uid;
 
     QString authType;

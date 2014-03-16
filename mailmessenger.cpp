@@ -2,24 +2,20 @@
 
 #include "protocolparser.h"
 #include "remoteauthentication.h"
+#include "remoteconnectionmanager.h"
 #include "useridentity.h"
 
 
-MailMessenger::MailMessenger(Mailbox *mailbox, const MessageChannelInfo::Participant *_receiver, Profile *profile) :
+MailMessenger::MailMessenger(Mailbox *mailbox, const MessageChannelInfo::Participant *receiver, Profile *profile) :
     mailbox(mailbox),
     userIdentity(mailbox->getOwner()),
-    receiver(_receiver),
+    receiver(receiver),
+    profile(profile),
     targetContact(NULL),
     contactRequest(NULL),
     remoteConnection(NULL)
 {
     parseAddress(receiver->address);
-    remoteConnection = ConnectionManager::defaultConnectionFor(QUrl(targetServer));
-    if (remoteConnection == NULL)
-        return;
-    authentication = new SignatureAuthentication(remoteConnection, profile, userIdentity->getMyself()->getUid(),
-                                                  userIdentity->getKeyStore()->getUid(),
-                                                  userIdentity->getMyself()->getKeys()->getMainKeyId(), targetUser);
 }
 
 MailMessenger::~MailMessenger()
@@ -28,32 +24,38 @@ MailMessenger::~MailMessenger()
     delete remoteConnection;
 }
 
-WP::err MailMessenger::postMessage(MessageRef message)
+void MailMessenger::run(RemoteConnectionJobQueue *jobQueue)
 {
-    if (this->message != NULL)
-        return WP::kError;
-    this->message = message;
+    remoteConnection = jobQueue->getRemoteConnection();
+    RemoteAuthenticationInfo authenticationInfo(userIdentity->getMyself()->getUid(), targetUser,
+                                  userIdentity->getKeyStore()->getUid(),
+                                  userIdentity->getMyself()->getKeys()->getMainKeyId());
+    authentication = jobQueue->getRemoteAuthentication(authenticationInfo, profile);
 
-    if (targetServer == "")
-        return WP::kNotInit;
-    if (remoteConnection == NULL)
-        return WP::kNotInit;
-    if (authentication == NULL)
-        return WP::kNotInit;
 
     Contact *contact = userIdentity->findContact(receiver->address);
     if (contact != NULL) {
         onContactFound(WP::kOk);
-        return WP::kOk;
     } else if (receiver->uid != "") {
         contact = userIdentity->findContactByUid(receiver->uid);
         if (contact != NULL) {
             onContactFound(WP::kOk);
-            return WP::kOk;
         }
     }
 
-    return startContactRequest();
+    startContactRequest();
+}
+
+void MailMessenger::abort()
+{
+    if (serverReply != NULL)
+        serverReply->abort();
+    serverReply = NULL;
+}
+
+QString MailMessenger::getTargetServer()
+{
+    return targetServer;
 }
 
 void MailMessenger::authConnected(WP::err error)
@@ -61,8 +63,10 @@ void MailMessenger::authConnected(WP::err error)
     if (error == WP::kContactNeeded) {
         startContactRequest();
         return;
-    } else if (error != WP::kOk)
+    } else if (error != WP::kOk) {
+        emit jobDone(error);
         return;
+    }
 
     MessageChannelRef targetMessageChannel = MessageChannelRef();
     if (message->getChannel().staticCast<MessageChannel>()->isNewLocale()) {
@@ -89,7 +93,7 @@ void MailMessenger::authConnected(WP::err error)
         error = XMLSecureParcel::write(&outStream, myself, signatureKeyId,
                                        targetMessageChannel.data(), "channel");
         if (error != WP::kOk) {
-            emit sendResult(error);
+            emit jobDone(error);
             return;
         }
     }
@@ -100,7 +104,7 @@ void MailMessenger::authConnected(WP::err error)
         error = XMLSecureParcel::write(&outStream, myself, signatureKeyId, info.data(),
                                        "channel_info");
         if (error != WP::kOk) {
-            emit sendResult(error);
+            emit jobDone(error);
             return;
         }
     }
@@ -108,7 +112,7 @@ void MailMessenger::authConnected(WP::err error)
     // write message
     error = XMLSecureParcel::write(&outStream, myself, signatureKeyId, message.data(), "message");
     if (error != WP::kOk) {
-        emit sendResult(error);
+        emit jobDone(error);
         return;
     }
 
@@ -125,8 +129,10 @@ void MailMessenger::onContactFound(WP::err error)
     delete contactRequest;
     contactRequest = NULL;
 
-    if (error != WP::kOk)
+    if (error != WP::kOk) {
+        emit jobDone(error);
         return;
+    }
 
     targetContact = userIdentity->findContact(receiver->address);
     if (targetContact == NULL)
@@ -145,7 +151,7 @@ void MailMessenger::onContactFound(WP::err error)
 void MailMessenger::handleReply(WP::err error)
 {
     QByteArray data = serverReply->readAll();
-    emit sendResult(error);
+    emit jobDone(error);
 }
 
 void MailMessenger::parseAddress(const QString &targetAddress)
@@ -229,9 +235,17 @@ void MultiMailMessenger::onSendResult(WP::err error)
         return;
     }
 
-    //mailMessenger->deleteLater();
-    mailMessenger = new MailMessenger(mailbox, participant, profile);
-    mailMessenger->postMessage(message);
+    MailMessengerRef mailMessenger(new MailMessenger(mailbox, participant, profile));
+    QString targetServer = mailMessenger->getTargetServer();
+    if (targetServer == "") {
+        onSendResult(WP::kBadValue);
+        return;
+    }
+    QUrl url(targetServer);
+    RemoteConnectionJobQueue *queue = ConnectionManager::get()->getConnectionJobQueue(
+                ConnectionManager::getDefaultConnectionFor(url));
+    queue->queue(mailMessenger);
 
-    connect(mailMessenger, SIGNAL(sendResult(WP::err)), this, SLOT(onSendResult(WP::err)));
+
+    connect(mailMessenger.data(), SIGNAL(jobDone(WP::err)), this, SLOT(onSendResult(WP::err)));
 }

@@ -7,33 +7,9 @@
 #include "remotesync.h"
 
 
-class SyncManager;
-
-class SyncEntry : public QObject {
-    Q_OBJECT
-public:
-    SyncEntry(SyncManager* syncManager, DatabaseInterface *database,
-              QObject *parent = NULL);
-
-    WP::err sync();
-    bool isSyncing();
-
-    const DatabaseInterface *getDatabase() const;
-
-public slots:
-    void onSyncFinished(WP::err error);
-
-private:
-    SyncManager* syncManager;
-    DatabaseInterface *database;
-    RemoteSync *remoteSync;
-    QString oldTip;
-};
-
-
-class SyncManager : public QObject
+class SyncManager : public RemoteConnectionJob
 {
-    Q_OBJECT
+Q_OBJECT
 public:
     explicit SyncManager(RemoteDataStorage* remoteDataStorage, QObject *parent = 0);
     ~SyncManager();
@@ -41,10 +17,11 @@ public:
     /*! Start monitoring a remote branch. If changes are detected the branch is synced.*/
     WP::err keepSynced(DatabaseInterface *branchDatabase);
 
-    void startWatching();
-    void stopWatching();
+    virtual void run(RemoteConnectionJobQueue *jobQueue);
+    virtual void abort();
 
 private:
+    void startWatching();
     void restartWatching();
 
     void syncBranches(const QStringList &branches);
@@ -64,13 +41,17 @@ private:
     friend class PauseLock;
 
     RemoteDataStorage* remoteDataStorage;
-    QList<SyncEntry*> syncEntries;
+    QList<RemoteSyncRef> syncEntries;
 
     RemoteAuthentication *authentication;
     RemoteConnection *remoteConnection;
     RemoteConnectionReply *serverReply;
 
+    RemoteConnectionJobQueue *jobQueue;
+
     bool watching;
 };
+
+typedef QSharedPointer<SyncManager> SyncManagerRef;
 
 #endif // SYNCMANAGER_H

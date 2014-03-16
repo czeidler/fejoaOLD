@@ -52,7 +52,6 @@ private:
     QProgressBar *progressBar;
     InfoStatusWidget *infoStatusWidget;
 
-    SyncManager *syncManager;
     SyncManagerGuiAdapter syncManagerGuiAdapter;
 };
 

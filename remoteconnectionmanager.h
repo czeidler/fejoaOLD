@@ -1,55 +1,70 @@
 #ifndef REMOTECONNECTIONMANAGER_H
 #define REMOTECONNECTIONMANAGER_H
 
+#include <QSharedPointer>
+
 #include "remoteauthentication.h"
 #include "remoteconnection.h"
 
+class RemoteConnectionJobQueue;
 
 class RemoteConnectionJob : public QObject {
 Q_OBJECT
 public:
-    RemoteConnectionJob(const RemoteConnectionInfo &info);
+    RemoteConnectionJob(QObject *parent = NULL);
     virtual ~RemoteConnectionJob() {}
 
-    virtual void run(RemoteConnection *connection) = 0;
-    virtual void abort();
-
-    RemoteConnectionInfo &getRemoteConnectionInfo();
+    virtual void run(RemoteConnectionJobQueue *jobQueue) = 0;
+    virtual void abort() = 0;
 
 signals:
     void jobDone(WP::err error);
 
-private:
-    RemoteConnectionInfo remoteConnectionInfo;
 };
 
+typedef QSharedPointer<RemoteConnectionJob> RemoteConnectionJobRef;
 
-class RemoteConnectionJobQueue {
+
+class RemoteConnectionJobQueue : public QObject {
+Q_OBJECT
 public:
     RemoteConnectionJobQueue(RemoteConnection *connection = NULL);
     ~RemoteConnectionJobQueue();
 
     void start();
 
-    WP::err queue(RemoteConnectionJob *job);
-    void setIdleJob(RemoteConnectionJob *job);
+    void queue(RemoteConnectionJobRef job);
+    void setIdleJob(RemoteConnectionJobRef job);
 
     RemoteConnection *getRemoteConnection() const;
     void setRemoteConnection(RemoteConnection *value);
+
+    RemoteAuthentication *getRemoteAuthentication(const RemoteAuthenticationInfo &info, Profile *profile);
 
 private slots:
     void onJobDone(WP::err error);
 
 private:
-    void startJob(RemoteConnectionJob *job);
+    void startJob(RemoteConnectionJobRef job);
     void reschedule();
 
     RemoteConnection *remoteConnection;
 
-    RemoteConnectionJob *idleJob;
+    RemoteConnectionJobRef idleJob;
 
     RemoteConnectionJob *runningJob;
-    QList<RemoteConnectionJob*> jobQueue;
+    QList<RemoteConnectionJobRef> jobQueue;
+
+    class AuthenticationEntry {
+    public:
+        AuthenticationEntry(const RemoteAuthenticationInfo &info, Profile *profile,
+                            RemoteConnection *remoteConnection);
+
+        RemoteAuthenticationInfo authenticationInfo;
+        RemoteAuthentication *remoteAuthentication;
+    };
+
+    QList<AuthenticationEntry*> authenticationList;
 };
 
 class ConnectionManager {
@@ -62,17 +77,9 @@ public:
     static RemoteConnectionInfo getHTTPConnectionFor(const QUrl &url);
     static RemoteConnectionInfo getEncryptedPHPConnectionFor(const QUrl &url);
 
-    RemoteAuthentication *getRemoteAuthentication(const RemoteConnectionInfo &connection,
-                                                  const RemoteAuthenticationInfo &authentication);
-
+    static ConnectionManager *get();
 private:
-    class AuthenticationEntry {
-    public:
-        AuthenticationEntry(const RemoteAuthenticationInfo &info);
-
-        RemoteAuthenticationInfo info;
-        RemoteAuthentication *remoteAuthentication;
-    };
+    ConnectionManager();
 
     class ConnectionEntry {
     public:
@@ -81,14 +88,11 @@ private:
         RemoteConnectionInfo info;
         RemoteConnectionJobQueue jobQueue;
 
-        AuthenticationEntry &getAuthenticationEntry(const RemoteAuthenticationInfo &info);
     private:
         RemoteConnection *createRemoteConnection(const RemoteConnectionInfo& info);
-
-        QList<AuthenticationEntry> authenticationList;
     };
 
-    QList<ConnectionEntry> connectionList;
+    QList<ConnectionEntry*> connectionList;
 };
 
 #endif // REMOTECONNECTIONMANAGER_H
