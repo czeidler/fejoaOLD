@@ -38,7 +38,6 @@ SOURCES += main.cpp \
     gui/passworddialog.cpp \
     gui/threadview.cpp \
     gui/useridentityview.cpp \
-    support/cryptointerface.cpp \
     support/databaseinterface.cpp \
     support/databaseutil.cpp \
     support/gitinterface.cpp \
@@ -52,7 +51,10 @@ SOURCES += main.cpp \
     gui/newmessageview.cpp \
     gui/infostatuswidget.cpp \
     support/diffmonitor.cpp \
-    remoteconnectionmanager.cpp
+    remoteconnectionmanager.cpp \
+    support/cryptointerface.cpp \
+    support/qcacryptointerface.cpp \
+    support/cryptopluspluscryptointerface.cpp
 
 # Installation path
 # target.path =
@@ -95,16 +97,18 @@ HEADERS += \
     gui/newmessageview.h \
     gui/infostatuswidget.h \
     support/diffmonitor.h \
-    remoteconnectionmanager.h
+    remoteconnectionmanager.h \
+    support/qcacryptointerface.h \
+    support/cryptopluspluscryptointerface.h
 FORMS += \
     gui/mainwindow.ui \
     gui/createprofiledialog.ui \
     gui/passworddialog.ui
 
-unix: LIBS += -L$$PWD/../libgit2/build -lgit2 -lz
+unix: LIBS += -lgit2 -lz -lcrypto++
 
-INCLUDEPATH += $$PWD/../libgit2/include gui support
-DEPENDPATH += $$PWD/../libgit2
+INCLUDEPATH +=  gui support
+#DEPENDPATH += $$PWD/../libgit2
 
 #unix: PRE_TARGETDEPS += $$PWD/../libgit2/.a
 
