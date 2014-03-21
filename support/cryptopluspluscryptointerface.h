@@ -8,8 +8,7 @@
 class CryptoPlusPlusCryptoInterface : public CryptoInterface
 {
 public:
-    CryptoPlusPlusCryptoInterface();
-    ~CryptoPlusPlusCryptoInterface();
+    virtual ~CryptoPlusPlusCryptoInterface();
 
     WP::err generateKeyPair(QString &certificate, QString &publicKey,
                             QString &privateKey, const SecureArray &keyPassword);
