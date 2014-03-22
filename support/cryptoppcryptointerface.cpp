@@ -121,12 +121,11 @@ WP::err CryptoPPCryptoInterface::encryptSymmetric(const SecureArray &input, QByt
 {
     std::string cipher;
     try {
-        CTR_Mode<AES>::Encryption encryptor;
+        CBC_Mode<AES>::Encryption encryptor;
         encryptor.SetKeyWithIV((byte*)key.data(), key.size(), (byte*)iv.data(), iv.size());
 
-        StreamTransformationFilter stf(encryptor, new StringSink(cipher));
-        stf.Put((byte*)input.data(), input.size());
-        stf.MessageEnd();
+        StringSource((byte*)input.data(), input.size(), true,
+                new StreamTransformationFilter(encryptor, new StringSink(cipher)));
     } catch (Exception& e) {
         qDebug() << "CryptoPP::Exception caught: "<< e.what() << endl;
         return WP::kError;
@@ -143,12 +142,12 @@ WP::err CryptoPPCryptoInterface::decryptSymmetric(const QByteArray &input, Secur
 {
     std::string decryptedStd;
     try {
-        CTR_Mode<AES>::Decryption decryptor;
+        CBC_Mode<AES>::Decryption decryptor;
         decryptor.SetKeyWithIV((byte*)key.data(), key.size(), (byte*)iv.data(), iv.size());
 
-        StreamTransformationFilter stf(decryptor, new StringSink(decryptedStd));
-        stf.Put((byte*)input.data(), input.size() );
-        stf.MessageEnd();
+        StringSource((byte*)input.data(), input.size(), true,
+                     new StreamTransformationFilter(decryptor, new StringSink(decryptedStd)));
+
     } catch (Exception& e) {
         qDebug() << "CryptoPP::Exception caught: "<< e.what() << endl;
         return WP::kError;

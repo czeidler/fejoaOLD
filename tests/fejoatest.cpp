@@ -48,12 +48,12 @@ void FejoaTest::testCyrptoInterface()
     QVERIFY2(verified == true, "verifing");
 
     // symmetric encryption
-    QByteArray symmetricKey = crypto->generateSymmetricKey(2048);
-    QByteArray iv = crypto->generateInitalizationVector(2048);
+    QByteArray symmetricKey = crypto->generateSymmetricKey(256);
+    QByteArray iv = crypto->generateInitalizationVector(256);
     error = crypto->encryptSymmetric(input, encrypted, symmetricKey, iv);
     QVERIFY2(error == WP::kOk, "symmetric encryption");
 
-    error = crypto->decryptSymmetric(input, plain, symmetricKey, iv);
+    error = crypto->decryptSymmetric(encrypted, plain, symmetricKey, iv);
     QVERIFY2(error == WP::kOk, "symmetric decryption");
 
     QVERIFY2(plain == kTestString, "symmetric decrypted text == plain?");
