@@ -927,9 +927,9 @@ WP::err GitInterface::getDiff(const QString &baseCommit, const QString &endCommi
     int error = git_diff_tree_to_tree(&diff, repository, baseTree.data(), endTree.data(), NULL);
     if (error != 0)
         return WP::kError;
-    QSharedPointer<git_diff> diffDeleter(diff, git_diff_free);
 
     error = git_diff_foreach(diff, diffFileHandler, NULL, NULL, &databaseDiff);
+    git_diff_free(diff);
     if (error != 0)
         return WP::kError;
     return WP::kOk;
