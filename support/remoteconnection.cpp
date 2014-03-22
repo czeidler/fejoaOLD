@@ -3,11 +3,9 @@
 #include <QCoreApplication>
 #include <QDebug>
 #include <QHttpPart>
+#include <QtNetwork/QNetworkCookieJar>
 #include <QXmlStreamAttributes>
 #include <QXmlStreamReader>
-
-#include "profile.h"
-#include "mainapplication.h"
 
 
 class PHPEncryptionFilter {
@@ -127,7 +125,7 @@ QUrl HTTPConnection::getUrl()
 
 QNetworkAccessManager* HTTPConnection::getNetworkAccessManager()
 {
-    return ((MainApplication*)qApp)->getNetworkAccessManager();
+    return NetworkAccessManagerSingelton::getNetworkManager();
 }
 
 WP::err HTTPConnection::connectToServer()
@@ -409,4 +407,16 @@ bool operator==(const RemoteConnectionInfo &info1, const RemoteConnectionInfo &i
 bool operator!=(const RemoteConnectionInfo &info1, const RemoteConnectionInfo &info2)
 {
     return !(info1 == info2);
+}
+
+
+QNetworkAccessManager *NetworkAccessManagerSingelton::networkManager = NULL;
+
+QNetworkAccessManager *NetworkAccessManagerSingelton::getNetworkManager(QObject *parent)
+{
+    if (networkManager == NULL) {
+        networkManager = new QNetworkAccessManager(parent);
+        networkManager->setCookieJar(new QNetworkCookieJar(parent));
+    }
+    return networkManager;
 }

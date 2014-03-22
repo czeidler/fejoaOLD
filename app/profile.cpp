@@ -349,7 +349,7 @@ WP::err Profile::loadRemotes()
 
     for (int i = 0; i < remotesList.count(); i++) {
         RemoteDataStorage *remote
-            = new RemoteDataStorage(this);
+                = new RemoteDataStorage(getKeyStoreFinder());
         StorageDirectory dir(this, prependBaseDir("remotes/" + remotesList.at(i)));
         if (remote->load(dir) != WP::kOk)
             continue;
@@ -448,15 +448,6 @@ void Profile::clear()
     branchList.clear();
 }
 
-KeyStore *Profile::findKeyStore(const QString &keyStoreId)
-{
-    QMap<QString, KeyStoreRef*>::const_iterator it;
-    it = mapOfKeyStores.find(keyStoreId);
-    if (it == mapOfKeyStores.end())
-        return NULL;
-    return it.value()->getUserData();
-}
-
 DatabaseBranch *Profile::databaseBranchFor(const QString &database, const QString &branch)
 {
     for (int i = 0; i < branchList.count(); i++) {
@@ -474,7 +465,7 @@ DatabaseBranch *Profile::databaseBranchFor(const QString &database, const QStrin
 
 RemoteDataStorage *Profile::addPHPRemote(const QString &url)
 {
-    RemoteDataStorage *remoteDataStorage = new RemoteDataStorage(this);
+    RemoteDataStorage *remoteDataStorage = new RemoteDataStorage(getKeyStoreFinder());
     remoteDataStorage->setPHPEncryptedRemoteConnection(url);
 
     WP::err error = addRemoteDataStorage(remoteDataStorage);
@@ -487,7 +478,7 @@ RemoteDataStorage *Profile::addPHPRemote(const QString &url)
 
 RemoteDataStorage *Profile::addHTTPRemote(const QString &url)
 {
-    RemoteDataStorage *remoteDataStorage = new RemoteDataStorage(this);
+    RemoteDataStorage *remoteDataStorage = new RemoteDataStorage(getKeyStoreFinder());
     remoteDataStorage->setHTTPRemoteConnection(url);
 
     WP::err error = addRemoteDataStorage(remoteDataStorage);
@@ -614,4 +605,9 @@ Mailbox *Profile::ProfileMailboxFinder::find(const QString &mailboxId)
     if (it == mapOfKeyMailboxes.end())
         return NULL;
     return it.value()->getUserData();
+}
+
+KeyStoreFinder *Profile::getKeyStoreFinder()
+{
+    return &keyStoreFinder;
 }

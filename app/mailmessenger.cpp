@@ -1,5 +1,6 @@
 #include "mailmessenger.h"
 
+#include "profile.h"
 #include "protocolparser.h"
 #include "remoteauthentication.h"
 #include "remoteconnectionmanager.h"
@@ -30,7 +31,7 @@ void MailMessenger::run(RemoteConnectionJobQueue *jobQueue)
     RemoteAuthenticationInfo authenticationInfo(userIdentity->getMyself()->getUid(), targetUser,
                                   userIdentity->getKeyStore()->getUid(),
                                   userIdentity->getMyself()->getKeys()->getMainKeyId());
-    authentication = jobQueue->getRemoteAuthentication(authenticationInfo, profile);
+    authentication = jobQueue->getRemoteAuthentication(authenticationInfo, profile->getKeyStoreFinder());
 
 
     Contact *contact = userIdentity->findContact(receiver->address);

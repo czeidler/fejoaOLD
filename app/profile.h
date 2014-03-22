@@ -50,7 +50,7 @@ public:
     //! adds an external key store to the profile
     WP::err addKeyStore(KeyStore *keyStore);
     WP::err removeKeyStore(KeyStore *keyStore);
-    KeyStore *findKeyStore(const QString &keyStoreId);
+    KeyStoreFinder *getKeyStoreFinder();
 
     WP::err addUserIdentity(UserIdentity *identity);
     WP::err removeUserIdentity(UserIdentity *useIdentity);

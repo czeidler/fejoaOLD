@@ -4,15 +4,6 @@
 #include "remoteauthentication.h"
 
 
-RemoteDataStorage::RemoteDataStorage(Profile *profile) :
-    profile(profile)
-{
-}
-
-RemoteDataStorage::~RemoteDataStorage()
-{
-}
-
 QString RemoteDataStorage::getUid()
 {
     return uid;
@@ -26,6 +17,11 @@ const QString &RemoteDataStorage::getConnectionType()
 const QString &RemoteDataStorage::getAuthType()
 {
     return authType;
+}
+
+KeyStoreFinder *RemoteDataStorage::getKeyStoreFinder()
+{
+    return keyStoreFinder;
 }
 
 void RemoteDataStorage::setPHPEncryptedRemoteConnection(const QString &url)
@@ -59,17 +55,17 @@ RemoteAuthenticationInfo RemoteDataStorage::getRemoteAuthenticationInfo()
     return authenticationInfo;
 }
 
-Profile *RemoteDataStorage::getProfile()
-{
-    return profile;
-}
-
 QString RemoteDataStorage::hash()
 {
     CryptoInterface *crypto = CryptoInterfaceSingleton::getCryptoInterface();
     QByteArray value = QString(connectionType + connectionInfo.getUrl().path()).toLatin1();
     QByteArray hashResult = crypto->sha1Hash(value);
     return crypto->toHex(hashResult);
+}
+
+RemoteDataStorage::RemoteDataStorage(KeyStoreFinder *keyStoreFinder) :
+    keyStoreFinder(keyStoreFinder)
+{
 }
 
 WP::err RemoteDataStorage::write(StorageDirectory &dir)

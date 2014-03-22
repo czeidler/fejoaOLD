@@ -66,13 +66,13 @@ void RemoteConnectionJobQueue::setRemoteConnection(RemoteConnection *value)
 }
 
 RemoteAuthentication *RemoteConnectionJobQueue::getRemoteAuthentication(
-        const RemoteAuthenticationInfo &info, Profile *profile)
+        const RemoteAuthenticationInfo &info, KeyStoreFinder *keyStoreFinder)
 {
     foreach (AuthenticationEntry *entry, authenticationList) {
         if (entry->authenticationInfo == info)
             return entry->remoteAuthentication;
     }
-    AuthenticationEntry *entry = new AuthenticationEntry(info, profile, remoteConnection);
+    AuthenticationEntry *entry = new AuthenticationEntry(info, keyStoreFinder, remoteConnection);
     authenticationList.append(entry);
 
     return entry->remoteAuthentication;
@@ -166,10 +166,10 @@ RemoteConnection *ConnectionManager::ConnectionEntry::createRemoteConnection(
 
 
 RemoteConnectionJobQueue::AuthenticationEntry::AuthenticationEntry(
-        const RemoteAuthenticationInfo &info, Profile *profile, RemoteConnection *remoteConnection) :
+        const RemoteAuthenticationInfo &info, KeyStoreFinder *keyStoreFinder, RemoteConnection *remoteConnection) :
     remoteAuthentication(NULL)
 {
     authenticationInfo = info;
     if (authenticationInfo.getType() == RemoteAuthenticationInfo::kSignature)
-        remoteAuthentication = new SignatureAuthentication(remoteConnection, profile, info);
+        remoteAuthentication = new SignatureAuthentication(remoteConnection, keyStoreFinder, info);
 }

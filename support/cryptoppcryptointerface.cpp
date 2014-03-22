@@ -1,4 +1,4 @@
-#include "cryptopluspluscryptointerface.h"
+#include "cryptoppcryptointerface.h"
 
 #include <string>
 
@@ -12,11 +12,11 @@
 using CryptoPP::RSA;
 
 
-CryptoPlusPlusCryptoInterface::~CryptoPlusPlusCryptoInterface()
+CryptoPPCryptoInterface::~CryptoPPCryptoInterface()
 {
 }
 
-WP::err CryptoPlusPlusCryptoInterface::generateKeyPair(QString &certificate, QString &publicKey, QString &privateKey, const SecureArray &keyPassword)
+WP::err CryptoPPCryptoInterface::generateKeyPair(QString &certificate, QString &publicKey, QString &privateKey, const SecureArray &keyPassword)
 {
     RSA::PrivateKey rsaPrivateKey;
     rsaPrivateKey.GenerateRandomWithKeySize(randomGenerator, 2048);
@@ -36,7 +36,7 @@ WP::err CryptoPlusPlusCryptoInterface::generateKeyPair(QString &certificate, QSt
     return WP::kOk;
 }
 
-SecureArray CryptoPlusPlusCryptoInterface::deriveKey(const SecureArray &secret, const QString &kdf, const QString &kdfAlgo, const SecureArray &salt, unsigned int keyLength, unsigned int iterations)
+SecureArray CryptoPPCryptoInterface::deriveKey(const SecureArray &secret, const QString &kdf, const QString &kdfAlgo, const SecureArray &salt, unsigned int keyLength, unsigned int iterations)
 {
     CryptoPP::SecByteBlock derivedKey(CryptoPP::AES::DEFAULT_KEYLENGTH);
 
@@ -47,12 +47,12 @@ SecureArray CryptoPlusPlusCryptoInterface::deriveKey(const SecureArray &secret, 
     return outKey.setRawData((const char*)derivedKey.BytePtr(), derivedKey.size());
 }
 
-QByteArray CryptoPlusPlusCryptoInterface::generateSalt(const QString &value)
+QByteArray CryptoPPCryptoInterface::generateSalt(const QString &value)
 {
     return value.toLatin1();
 }
 
-QByteArray CryptoPlusPlusCryptoInterface::generateInitalizationVector(int size)
+QByteArray CryptoPPCryptoInterface::generateInitalizationVector(int size)
 {
     CryptoPP::SecByteBlock data(CryptoPP::AES::DEFAULT_KEYLENGTH);
     randomGenerator.GenerateBlock(data, data.size());
@@ -60,12 +60,12 @@ QByteArray CryptoPlusPlusCryptoInterface::generateInitalizationVector(int size)
     return outData.setRawData((const char*)data.BytePtr(), data.size());
 }
 
-SecureArray CryptoPlusPlusCryptoInterface::generateSymmetricKey(int size)
+SecureArray CryptoPPCryptoInterface::generateSymmetricKey(int size)
 {
     return generateInitalizationVector(size);
 }
 
-QString CryptoPlusPlusCryptoInterface::generateUid()
+QString CryptoPPCryptoInterface::generateUid()
 {
     CryptoPP::SecByteBlock data(CryptoPP::AES::DEFAULT_KEYLENGTH);
     randomGenerator.GenerateBlock(data, data.size());
@@ -79,7 +79,7 @@ QString CryptoPlusPlusCryptoInterface::generateUid()
     return out;
 }
 
-WP::err CryptoPlusPlusCryptoInterface::encryptSymmetric(const SecureArray &input, QByteArray &encrypted, const SecureArray &key, const QByteArray &iv, const char *algo)
+WP::err CryptoPPCryptoInterface::encryptSymmetric(const SecureArray &input, QByteArray &encrypted, const SecureArray &key, const QByteArray &iv, const char *algo)
 {
     CryptoPP::CTR_Mode<CryptoPP::AES>::Encryption encryptor;
     encryptor.SetKeyWithIV((byte*)key.data(), key.size(), (byte*)iv.data(), iv.size());
@@ -93,7 +93,7 @@ WP::err CryptoPlusPlusCryptoInterface::encryptSymmetric(const SecureArray &input
     return WP::kOk;
 }
 
-WP::err CryptoPlusPlusCryptoInterface::decryptSymmetric(const QByteArray &input, SecureArray &decrypted, const SecureArray &key, const QByteArray &iv, const char *algo)
+WP::err CryptoPPCryptoInterface::decryptSymmetric(const QByteArray &input, SecureArray &decrypted, const SecureArray &key, const QByteArray &iv, const char *algo)
 {
     CryptoPP::CTR_Mode<CryptoPP::AES>::Decryption decryptor;
     decryptor.SetKeyWithIV((byte*)key.data(), key.size(), (byte*)iv.data(), iv.size());
@@ -107,7 +107,7 @@ WP::err CryptoPlusPlusCryptoInterface::decryptSymmetric(const QByteArray &input,
     return WP::kOk;
 }
 
-WP::err CryptoPlusPlusCryptoInterface::encyrptAsymmetric(const QByteArray &input, QByteArray &encrypted, const QString &certificate)
+WP::err CryptoPPCryptoInterface::encyrptAsymmetric(const QByteArray &input, QByteArray &encrypted, const QString &certificate)
 {
     CryptoPP::StringSource keySource((byte*)certificate.data(), certificate.size(), true);
 
@@ -124,7 +124,7 @@ WP::err CryptoPlusPlusCryptoInterface::encyrptAsymmetric(const QByteArray &input
     return WP::kOk;
 }
 
-WP::err CryptoPlusPlusCryptoInterface::decryptAsymmetric(const QByteArray &input, QByteArray &plain, const QString &privateKey, const SecureArray &keyPassword, const QString &certificate)
+WP::err CryptoPPCryptoInterface::decryptAsymmetric(const QByteArray &input, QByteArray &plain, const QString &privateKey, const SecureArray &keyPassword, const QString &certificate)
 {
     CryptoPP::StringSource privateKeySource((byte*)privateKey.data(), privateKey.size(), true);
 
@@ -137,7 +137,7 @@ WP::err CryptoPlusPlusCryptoInterface::decryptAsymmetric(const QByteArray &input
     return WP::kOk;
 }
 
-QByteArray CryptoPlusPlusCryptoInterface::sha1Hash(const QByteArray &string) const
+QByteArray CryptoPPCryptoInterface::sha1Hash(const QByteArray &string) const
 {
     CryptoPP::SHA1 sha1;
     std::string hash = "";
@@ -148,7 +148,7 @@ QByteArray CryptoPlusPlusCryptoInterface::sha1Hash(const QByteArray &string) con
     return out.setRawData(hash.data(), hash.size());
 }
 
-QByteArray CryptoPlusPlusCryptoInterface::sha2Hash(const QByteArray &string) const
+QByteArray CryptoPPCryptoInterface::sha2Hash(const QByteArray &string) const
 {
     CryptoPP::SHA256 sha;
     std::string hash = "";
@@ -159,7 +159,7 @@ QByteArray CryptoPlusPlusCryptoInterface::sha2Hash(const QByteArray &string) con
     return out.setRawData(hash.data(), hash.size());
 }
 
-QString CryptoPlusPlusCryptoInterface::toHex(const QByteArray &string) const
+QString CryptoPPCryptoInterface::toHex(const QByteArray &string) const
 {
     std::string encoded;
     CryptoPP::StringSource source((byte*)string.data(), string.size(), true,
@@ -169,7 +169,7 @@ QString CryptoPlusPlusCryptoInterface::toHex(const QByteArray &string) const
     return out;
 }
 
-WP::err CryptoPlusPlusCryptoInterface::sign(const QByteArray &input, QByteArray &signature, const QString &privateKeyString, const SecureArray &keyPassword)
+WP::err CryptoPPCryptoInterface::sign(const QByteArray &input, QByteArray &signature, const QString &privateKeyString, const SecureArray &keyPassword)
 {
     CryptoPP::StringSource privateKeySource((byte*)privateKeyString.data(), privateKeyString.size(), true);
     CryptoPP::RSASSA_PKCS1v15_SHA_Signer signer(privateKeySource);
@@ -182,7 +182,7 @@ WP::err CryptoPlusPlusCryptoInterface::sign(const QByteArray &input, QByteArray 
     return WP::kOk;
 }
 
-bool CryptoPlusPlusCryptoInterface::verifySignatur(const QByteArray &message, const QByteArray &signature, const QString &publicKeyString)
+bool CryptoPPCryptoInterface::verifySignatur(const QByteArray &message, const QByteArray &signature, const QString &publicKeyString)
 {
     try {
         CryptoPP::StringSource publicKeySoruce((byte*)publicKeyString.data(), publicKeyString.size(), true);
@@ -202,12 +202,12 @@ bool CryptoPlusPlusCryptoInterface::verifySignatur(const QByteArray &message, co
     return true;
 }
 
-void CryptoPlusPlusCryptoInterface::generateDHParam(QString &prime, QString &base, QString &secret, QString &pub)
+void CryptoPPCryptoInterface::generateDHParam(QString &prime, QString &base, QString &secret, QString &pub)
 {
     // todo implement
 }
 
-SecureArray CryptoPlusPlusCryptoInterface::sharedDHKey(const QString &prime, const QString &base, const QString &secret)
+SecureArray CryptoPPCryptoInterface::sharedDHKey(const QString &prime, const QString &base, const QString &secret)
 {
     // todo implement
     return QByteArray();

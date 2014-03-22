@@ -1,6 +1,6 @@
 #include "cryptointerface.h"
 
-#include "qcacryptointerface.h"
+#include "cryptoppcryptointerface.h"
 
 
 CryptoInterface *CryptoInterfaceSingleton::sCryptoInterface = NULL;
@@ -8,7 +8,7 @@ CryptoInterface *CryptoInterfaceSingleton::sCryptoInterface = NULL;
 CryptoInterface *CryptoInterfaceSingleton::getCryptoInterface()
 {
     if (sCryptoInterface == NULL)
-        sCryptoInterface = new QCACryptoInterface;
+        sCryptoInterface = new CryptoPPCryptoInterface();
     return sCryptoInterface;
 }
 

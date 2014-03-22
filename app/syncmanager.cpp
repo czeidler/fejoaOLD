@@ -57,7 +57,7 @@ void SyncManager::run(RemoteConnectionJobQueue *jobQueue)
 {
     this->jobQueue = jobQueue;
     authentication = jobQueue->getRemoteAuthentication(
-                remoteDataStorage->getRemoteAuthenticationInfo(), remoteDataStorage->getProfile());
+                remoteDataStorage->getRemoteAuthenticationInfo(), remoteDataStorage->getKeyStoreFinder());
     remoteConnection = jobQueue->getRemoteConnection();
 
     startWatching();

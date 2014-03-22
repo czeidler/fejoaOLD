@@ -15,8 +15,7 @@ class RemoteAuthentication;
  */
 class RemoteDataStorage {
 public:
-    RemoteDataStorage(Profile *profile);
-    virtual ~RemoteDataStorage();
+    RemoteDataStorage(KeyStoreFinder *keyStoreFinder);
 
     WP::err write(StorageDirectory &dir);
     WP::err load(StorageDirectory &dir);
@@ -26,22 +25,18 @@ public:
     const QString &getConnectionType();
     const QString &getAuthType();
 
+    KeyStoreFinder *getKeyStoreFinder();
+
     RemoteConnectionInfo getRemoteConnectionInfo();
     RemoteAuthenticationInfo getRemoteAuthenticationInfo();
-
-    Profile *getProfile();
-
-private:
-    friend class Profile;
 
     void setPHPEncryptedRemoteConnection(const QString &url);
     void setHTTPRemoteConnection(const QString &url);
 
     void setSignatureAuth(const QString &userName, const QString &keyStoreId, const QString &keyId, const QString &serverUser);
 
+private:
     QString hash();
-
-    Profile *profile;
 
     RemoteConnectionInfo connectionInfo;
     RemoteAuthenticationInfo authenticationInfo;
@@ -50,6 +45,7 @@ private:
     QString uid;
 
     QString authType;
+    KeyStoreFinder *keyStoreFinder;
 };
 
 #endif // REMOTESTORAGE_H

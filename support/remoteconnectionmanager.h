@@ -39,7 +39,7 @@ public:
     RemoteConnection *getRemoteConnection() const;
     void setRemoteConnection(RemoteConnection *value);
 
-    RemoteAuthentication *getRemoteAuthentication(const RemoteAuthenticationInfo &info, Profile *profile);
+    RemoteAuthentication *getRemoteAuthentication(const RemoteAuthenticationInfo &info, KeyStoreFinder *keyStoreFinder);
 
 private slots:
     void onJobDone(WP::err error);
@@ -57,7 +57,7 @@ private:
 
     class AuthenticationEntry {
     public:
-        AuthenticationEntry(const RemoteAuthenticationInfo &info, Profile *profile,
+        AuthenticationEntry(const RemoteAuthenticationInfo &info, KeyStoreFinder *keyStoreFinder,
                             RemoteConnection *remoteConnection);
 
         RemoteAuthenticationInfo authenticationInfo;

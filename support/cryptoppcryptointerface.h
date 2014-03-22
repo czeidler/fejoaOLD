@@ -1,14 +1,14 @@
-#ifndef CRYPTOPLUSPLUSCRYPTOINTERFACE_H
-#define CRYPTOPLUSPLUSCRYPTOINTERFACE_H
+#ifndef CRYPTOPPCRYPTOINTERFACE_H
+#define CRYPTOPPCRYPTOINTERFACE_H
 
 #include "cryptointerface.h"
 
 #include "cryptopp/osrng.h"
 
-class CryptoPlusPlusCryptoInterface : public CryptoInterface
+class CryptoPPCryptoInterface : public CryptoInterface
 {
 public:
-    virtual ~CryptoPlusPlusCryptoInterface();
+    virtual ~CryptoPPCryptoInterface();
 
     WP::err generateKeyPair(QString &certificate, QString &publicKey,
                             QString &privateKey, const SecureArray &keyPassword);
@@ -47,4 +47,4 @@ private:
     CryptoPP::AutoSeededRandomPool randomGenerator;
 };
 
-#endif // CRYPTOPLUSPLUSCRYPTOINTERFACE_H
+#endif // CRYPTOPPCRYPTOINTERFACE_H

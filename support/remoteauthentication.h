@@ -76,10 +76,12 @@ protected:
 };
 
 
+class KeyStoreFinder;
+
 class SignatureAuthentication : public RemoteAuthentication {
 Q_OBJECT
 public:
-    SignatureAuthentication(RemoteConnection *connection, Profile *profile,
+    SignatureAuthentication(RemoteConnection *connection, KeyStoreFinder *keyStoreFinder,
                             const RemoteAuthenticationInfo &info);
 
 protected slots:
@@ -94,7 +96,7 @@ protected:
     void getLogoutData(QByteArray &data);
 
 private:
-    Profile *profile;
+    KeyStoreFinder *keyStoreFinder;
     RemoteAuthenticationInfo authenticationInfo;
 
     QStringList roles;

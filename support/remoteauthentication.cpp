@@ -1,7 +1,6 @@
 #include "remoteauthentication.h"
 
 #include "databaseutil.h"
-#include "profile.h"
 #include "protocolparser.h"
 
 
@@ -77,10 +76,10 @@ const char *kAuthStanza = "auth";
 const char *kAuthSignedStanza = "auth_signed";
 
 SignatureAuthentication::SignatureAuthentication(RemoteConnection *connection,
-                                                 Profile *profile,
+                                                 KeyStoreFinder *keyStoreFinder,
                                                  const RemoteAuthenticationInfo &info) :
     RemoteAuthentication(connection),
-    profile(profile),
+    keyStoreFinder(keyStoreFinder),
     authenticationInfo(info)
 {
 }
@@ -142,7 +141,7 @@ WP::err SignatureAuthentication::getLoginData(QByteArray &data, const QByteArray
     if (userAuthHandler->status != "sign_this_token")
         return WP::kError;
 
-    KeyStore *keyStore = profile->findKeyStore(authenticationInfo.getKeyStoreId());
+    KeyStore *keyStore = keyStoreFinder->find(authenticationInfo.getKeyStoreId());
     if (keyStore == NULL)
         return WP::kEntryNotFound;
 

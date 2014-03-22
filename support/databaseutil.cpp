@@ -4,8 +4,7 @@
 #include <QTextStream>
 #include <QUuid>
 
-#include <remotestorage.h>
-
+#include "remotestorage.h"
 
 const char* kPathMasterKey = "master_key";
 const char* kPathMasterKeyIV = "master_key_iv";

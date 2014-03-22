@@ -52,15 +52,12 @@ public:
     MainApplication(int &argc, char *argv[]);
     ~MainApplication();
 
-    QNetworkAccessManager* getNetworkAccessManager();
-
 private:
     WP::err createNewProfile();
 
     MainWindow *mainWindow;
 
     Profile* profile;
-    QNetworkAccessManager *networkAccessManager;
 };
 
 #endif // MAINAPPLICATION_H

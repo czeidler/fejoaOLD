@@ -72,6 +72,14 @@ private:
 };
 
 
+class NetworkAccessManagerSingelton {
+public:
+    static QNetworkAccessManager *getNetworkManager(QObject *parent = NULL);
+
+private:
+    static QNetworkAccessManager *networkManager;
+};
+
 class HTTPConnection : public RemoteConnection
 {
 Q_OBJECT

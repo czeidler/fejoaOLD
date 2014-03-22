@@ -1,7 +1,5 @@
 #include "mainapplication.h"
 
-#include <QtNetwork/QNetworkCookieJar>
-
 #include "createprofiledialog.h"
 #include "passworddialog.h"
 #include "useridentity.h"
@@ -22,9 +20,6 @@ QString readPassword() {
 MainApplication::MainApplication(int &argc, char *argv[]) :
     QApplication(argc, argv)
 {
-    networkAccessManager = new QNetworkAccessManager(this);
-    networkAccessManager->setCookieJar(new QNetworkCookieJar(this));
-
     profile = new Profile(".git", "profile");
 
     // convenient hack
@@ -72,9 +67,4 @@ MainApplication::~MainApplication()
     delete mainWindow;
     delete profile;
     CryptoInterfaceSingleton::destroy();
-}
-
-QNetworkAccessManager *MainApplication::getNetworkAccessManager()
-{
-    return networkAccessManager;
 }

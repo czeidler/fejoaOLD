@@ -23,7 +23,7 @@ void RemoteSync::run(RemoteConnectionJobQueue *jobQueue)
 {
     remoteConnection = jobQueue->getRemoteConnection();
     authentication = jobQueue->getRemoteAuthentication(remoteStorage->getRemoteAuthenticationInfo(),
-                                                       remoteStorage->getProfile());
+                                                       remoteStorage->getKeyStoreFinder());
 
     if (authentication->isVerified())
         syncConnected(WP::kOk);
