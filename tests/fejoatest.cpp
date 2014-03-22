@@ -38,7 +38,25 @@ void FejoaTest::testCyrptoInterface()
     error = crypto->decryptAsymmetric(encrypted, plain, privateKey, "", certificate);
     QVERIFY2(error == WP::kOk, "asymmetric decryption");
 
-    QVERIFY2(plain == kTestString, "asymmetric decryption");
+    QVERIFY2(plain == kTestString, "asymmetric decrypted text == plain?");
+
+    QByteArray signature;
+    error = crypto->sign(input, signature, privateKey, "");
+    QVERIFY2(error == WP::kOk, "signing");
+
+    bool verified = crypto->verifySignatur(input, signature, publicKey);
+    QVERIFY2(verified == true, "verifing");
+
+    // symmetric encryption
+    QByteArray symmetricKey = crypto->generateSymmetricKey(2048);
+    QByteArray iv = crypto->generateInitalizationVector(2048);
+    error = crypto->encryptSymmetric(input, encrypted, symmetricKey, iv);
+    QVERIFY2(error == WP::kOk, "symmetric encryption");
+
+    error = crypto->decryptSymmetric(input, plain, symmetricKey, iv);
+    QVERIFY2(error == WP::kOk, "symmetric decryption");
+
+    QVERIFY2(plain == kTestString, "symmetric decrypted text == plain?");
 }
 
 QTEST_APPLESS_MAIN(FejoaTest)

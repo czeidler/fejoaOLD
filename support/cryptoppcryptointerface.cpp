@@ -2,6 +2,7 @@
 
 #include <string>
 
+#include <QDebug>
 #include <QString>
 
 #include <cryptopp/filters.h>
@@ -9,7 +10,8 @@
 #include <cryptopp/modes.h>
 #include <cryptopp/pwdbased.h>
 #include <cryptopp/rsa.h>
-using CryptoPP::RSA;
+
+using namespace CryptoPP;
 
 
 CryptoPPCryptoInterface::~CryptoPPCryptoInterface()
@@ -18,33 +20,69 @@ CryptoPPCryptoInterface::~CryptoPPCryptoInterface()
 
 WP::err CryptoPPCryptoInterface::generateKeyPair(QString &certificate, QString &publicKey, QString &privateKey, const SecureArray &keyPassword)
 {
-    RSA::PrivateKey rsaPrivateKey;
-    rsaPrivateKey.GenerateRandomWithKeySize(randomGenerator, 2048);
-    RSA::PublicKey rsaPublicKey(rsaPrivateKey);
+    try {
+        CryptoPP::RSAES_OAEP_SHA_Decryptor decryptor(randomGenerator, 2048 /*, e */);
+        CryptoPP::RSAES_OAEP_SHA_Encryptor encryptor(decryptor);
 
-    std::string buffer;
-    CryptoPP::StringSink privateSink(buffer);
-    rsaPrivateKey.Save(privateSink);
-    privateKey.fromStdString(buffer);
+        std::string privateKeyStd;
+        decryptor.AccessKey().Save(
+                 CryptoPP::HexEncoder(
+                    new CryptoPP::StringSink(privateKeyStd)
+                 ).Ref()
+              );
+        privateKey = QString::fromStdString(privateKeyStd);
 
-    buffer = "";
-    CryptoPP::StringSink publicSink(buffer);
-    rsaPublicKey.Save(publicSink);
-    publicKey.fromStdString(buffer);
-    certificate.fromStdString(buffer);
+        std::string publicKeyStd;
+        encryptor.AccessKey().Save(
+                 CryptoPP::HexEncoder(
+                    new CryptoPP::StringSink(publicKeyStd)
+                 ).Ref()
+              );
+        publicKey = QString::fromStdString(publicKeyStd);
+        certificate = QString::fromStdString(publicKeyStd);
+        /*
+        RSA::PrivateKey rsaPrivateKey;
+        rsaPrivateKey.GenerateRandomWithKeySize(randomGenerator, 2048);
+        RSA::PublicKey rsaPublicKey(rsaPrivateKey);
+
+        std::string buffer;
+        rsaPrivateKey.Save(StringSink(buffer).Ref());
+        std::string bufferHex;
+        StringSource(buffer, true, new HexEncoder(new StringSink(bufferHex)));
+        privateKey = QString::fromStdString(bufferHex);
+
+        buffer = "";
+        bufferHex = "";
+        rsaPublicKey.Save(StringSink(buffer).Ref());
+
+        StringSource(buffer, true, new HexEncoder(new StringSink(bufferHex)));
+
+        publicKey = QString::fromStdString(bufferHex);
+        certificate = QString::fromStdString(bufferHex);*/
+    } catch (Exception& e) {
+        qDebug() << "CryptoPP::Exception caught: "<< e.what() << endl;
+        return WP::kError;
+    } catch (...) {
+        return WP::kError;
+    }
 
     return WP::kOk;
 }
 
 SecureArray CryptoPPCryptoInterface::deriveKey(const SecureArray &secret, const QString &kdf, const QString &kdfAlgo, const SecureArray &salt, unsigned int keyLength, unsigned int iterations)
 {
-    CryptoPP::SecByteBlock derivedKey(CryptoPP::AES::DEFAULT_KEYLENGTH);
-
-    CryptoPP::PKCS5_PBKDF2_HMAC<CryptoPP::SHA256> pbkdf;
-    pbkdf.DeriveKey(derivedKey, derivedKey.size(), 0x00, (byte*)secret.data(), secret.size(), (byte*)salt.data(), salt.size(), iterations);
-
+    SecByteBlock derivedKey(AES::DEFAULT_KEYLENGTH);
+    try {
+        PKCS5_PBKDF2_HMAC<SHA256> pbkdf;
+        pbkdf.DeriveKey(derivedKey, derivedKey.size(), 0x00, (byte*)secret.data(), secret.size(), (byte*)salt.data(), salt.size(), iterations);
+    } catch (Exception& e) {
+        qDebug() << "CryptoPP::Exception caught: "<< e.what() << endl;
+        return SecureArray();
+    } catch (...) {
+        return SecureArray();
+    }
     SecureArray outKey;
-    return outKey.setRawData((const char*)derivedKey.BytePtr(), derivedKey.size());
+    return outKey.append((const char*)derivedKey.BytePtr(), derivedKey.size());
 }
 
 QByteArray CryptoPPCryptoInterface::generateSalt(const QString &value)
@@ -54,10 +92,10 @@ QByteArray CryptoPPCryptoInterface::generateSalt(const QString &value)
 
 QByteArray CryptoPPCryptoInterface::generateInitalizationVector(int size)
 {
-    CryptoPP::SecByteBlock data(CryptoPP::AES::DEFAULT_KEYLENGTH);
+    SecByteBlock data(AES::DEFAULT_KEYLENGTH);
     randomGenerator.GenerateBlock(data, data.size());
     SecureArray outData;
-    return outData.setRawData((const char*)data.BytePtr(), data.size());
+    return outData.append((const char*)data.BytePtr(), data.size());
 }
 
 SecureArray CryptoPPCryptoInterface::generateSymmetricKey(int size)
@@ -67,134 +105,190 @@ SecureArray CryptoPPCryptoInterface::generateSymmetricKey(int size)
 
 QString CryptoPPCryptoInterface::generateUid()
 {
-    CryptoPP::SecByteBlock data(CryptoPP::AES::DEFAULT_KEYLENGTH);
+    SecByteBlock data(AES::DEFAULT_KEYLENGTH);
     randomGenerator.GenerateBlock(data, data.size());
 
-    CryptoPP::SHA1 sha1;
+    SHA1 sha1;
     std::string hash = "";
-    CryptoPP::StringSource(data.BytePtr(), data.size(), true,
-                           new CryptoPP::HashFilter(sha1, new CryptoPP::HexEncoder(
-                                                        new CryptoPP::StringSink(hash))));
+    StringSource(data.BytePtr(), data.size(), true,
+                           new HashFilter(sha1, new HexEncoder(
+                                                        new StringSink(hash))));
     QString out = hash.c_str();
     return out;
 }
 
 WP::err CryptoPPCryptoInterface::encryptSymmetric(const SecureArray &input, QByteArray &encrypted, const SecureArray &key, const QByteArray &iv, const char *algo)
 {
-    CryptoPP::CTR_Mode<CryptoPP::AES>::Encryption encryptor;
-    encryptor.SetKeyWithIV((byte*)key.data(), key.size(), (byte*)iv.data(), iv.size());
-
     std::string cipher;
-    CryptoPP::StreamTransformationFilter stf(encryptor, new CryptoPP::StringSink(cipher));
-    stf.Put((byte*)input.data(), input.size());
-    stf.MessageEnd();
+    try {
+        CTR_Mode<AES>::Encryption encryptor;
+        encryptor.SetKeyWithIV((byte*)key.data(), key.size(), (byte*)iv.data(), iv.size());
 
-    encrypted.setRawData(cipher.c_str(), cipher.size());
+        StreamTransformationFilter stf(encryptor, new StringSink(cipher));
+        stf.Put((byte*)input.data(), input.size());
+        stf.MessageEnd();
+    } catch (Exception& e) {
+        qDebug() << "CryptoPP::Exception caught: "<< e.what() << endl;
+        return WP::kError;
+    } catch (...) {
+        return WP::kError;
+    }
+
+    encrypted.clear();
+    encrypted.append(cipher.c_str(), cipher.size());
     return WP::kOk;
 }
 
 WP::err CryptoPPCryptoInterface::decryptSymmetric(const QByteArray &input, SecureArray &decrypted, const SecureArray &key, const QByteArray &iv, const char *algo)
 {
-    CryptoPP::CTR_Mode<CryptoPP::AES>::Decryption decryptor;
-    decryptor.SetKeyWithIV((byte*)key.data(), key.size(), (byte*)iv.data(), iv.size());
-
     std::string decryptedStd;
-    CryptoPP::StreamTransformationFilter stf(decryptor, new CryptoPP::StringSink(decryptedStd));
-    stf.Put((byte*)input.data(), input.size() );
-    stf.MessageEnd();
+    try {
+        CTR_Mode<AES>::Decryption decryptor;
+        decryptor.SetKeyWithIV((byte*)key.data(), key.size(), (byte*)iv.data(), iv.size());
 
-    decrypted.setRawData(decryptedStd.c_str(), decryptedStd.size());
+        StreamTransformationFilter stf(decryptor, new StringSink(decryptedStd));
+        stf.Put((byte*)input.data(), input.size() );
+        stf.MessageEnd();
+    } catch (Exception& e) {
+        qDebug() << "CryptoPP::Exception caught: "<< e.what() << endl;
+        return WP::kError;
+    } catch (...) {
+        return WP::kError;
+    }
+    decrypted.clear();
+    decrypted.append(decryptedStd.c_str(), decryptedStd.size());
     return WP::kOk;
 }
 
 WP::err CryptoPPCryptoInterface::encyrptAsymmetric(const QByteArray &input, QByteArray &encrypted, const QString &certificate)
 {
-    CryptoPP::StringSource keySource((byte*)certificate.data(), certificate.size(), true);
-
-    RSA::PublicKey rsaPublicKey;
-    rsaPublicKey.Load(keySource);
-    CryptoPP::RSAES_OAEP_SHA_Encryptor encryptor(rsaPublicKey);
-
     std::string cipher;
-    CryptoPP::StringSource source((byte*)input.data(), input.size(), true,
-                        new CryptoPP::PK_EncryptorFilter(randomGenerator, encryptor,
-                                                         new CryptoPP::StringSink(cipher)));
+    try {
+        StringSource keySource((byte*)certificate.toLatin1().data(), certificate.size(), true, new HexDecoder());
+        ByteQueue byteQueue;
+        keySource.TransferAllTo(byteQueue);
+        byteQueue.MessageEnd();
 
-    encrypted.setRawData(cipher.c_str(), cipher.size());
+        RSA::PublicKey rsaPublicKey;
+        rsaPublicKey.Load(byteQueue);
+        RSAES_OAEP_SHA_Encryptor encryptor(rsaPublicKey);
+
+        StringSource((byte*)input.data(), input.size(), true,
+                            new PK_EncryptorFilter(randomGenerator, encryptor,
+                                                             new StringSink(cipher)));
+    } catch (Exception& e) {
+        qDebug() << "CryptoPP::Exception caught: "<< e.what() << endl;
+        return WP::kError;
+    } catch (...) {
+        return WP::kError;
+    }
+
+    encrypted.clear();
+    encrypted.append(cipher.c_str(), cipher.size());
     return WP::kOk;
 }
 
 WP::err CryptoPPCryptoInterface::decryptAsymmetric(const QByteArray &input, QByteArray &plain, const QString &privateKey, const SecureArray &keyPassword, const QString &certificate)
 {
-    CryptoPP::StringSource privateKeySource((byte*)privateKey.data(), privateKey.size(), true);
-
-    CryptoPP::RSAES_OAEP_SHA_Decryptor decoder(privateKeySource);
-
     std::string result;
-    CryptoPP::StringSource((byte*)input.data(), input.size(), true,
-                           new CryptoPP::PK_DecryptorFilter(randomGenerator, decoder, new CryptoPP::StringSink(result)));
-    plain.setRawData(result.c_str(), result.size());
+    try {
+        StringSource keySource((byte*)privateKey.toLatin1().data(), privateKey.size(), true, new HexDecoder());
+        ByteQueue byteQueue;
+        keySource.TransferTo(byteQueue);
+        byteQueue.MessageEnd();
+
+        RSAES_OAEP_SHA_Decryptor decoder(byteQueue);
+
+        StringSource((byte*)input.data(), input.size(), true,
+                               new PK_DecryptorFilter(randomGenerator, decoder, new StringSink(result)));
+    } catch (Exception& e) {
+        qDebug() << "CryptoPP::Exception caught: "<< e.what() << endl;
+        return WP::kError;
+    } catch (...) {
+        return WP::kError;
+    }
+    plain.clear();
+    plain.append(result.c_str(), result.size());
     return WP::kOk;
 }
 
 QByteArray CryptoPPCryptoInterface::sha1Hash(const QByteArray &string) const
 {
-    CryptoPP::SHA1 sha1;
+    SHA1 sha1;
     std::string hash = "";
-    CryptoPP::StringSource((byte*)string.data(), string.size(), true,
-                           new CryptoPP::HashFilter(sha1, new CryptoPP::HexEncoder(
-                                                        new CryptoPP::StringSink(hash))));
+    StringSource((byte*)string.data(), string.size(), true,
+                           new HashFilter(sha1, new HexEncoder(
+                                                        new StringSink(hash))));
     QByteArray out;
-    return out.setRawData(hash.data(), hash.size());
+    return out.append(hash.data(), hash.size());
 }
 
 QByteArray CryptoPPCryptoInterface::sha2Hash(const QByteArray &string) const
 {
-    CryptoPP::SHA256 sha;
+    SHA256 sha;
     std::string hash = "";
-    CryptoPP::StringSource((byte*)string.data(), string.size(), true,
-                           new CryptoPP::HashFilter(sha, new CryptoPP::HexEncoder(
-                                                        new CryptoPP::StringSink(hash))));
+    StringSource((byte*)string.data(), string.size(), true,
+                           new HashFilter(sha, new HexEncoder(
+                                                        new StringSink(hash))));
     QByteArray out;
-    return out.setRawData(hash.data(), hash.size());
+    return out.append(hash.data(), hash.size());
 }
 
 QString CryptoPPCryptoInterface::toHex(const QByteArray &string) const
 {
     std::string encoded;
-    CryptoPP::StringSource source((byte*)string.data(), string.size(), true,
-                        new CryptoPP::HexEncoder(new CryptoPP::StringSink(encoded)));
-    QString out;
-    out.fromStdString(encoded);
-    return out;
+    StringSource source((byte*)string.data(), string.size(), true,
+                        new HexEncoder(new StringSink(encoded)));
+    return QString::fromStdString(encoded);
 }
 
-WP::err CryptoPPCryptoInterface::sign(const QByteArray &input, QByteArray &signature, const QString &privateKeyString, const SecureArray &keyPassword)
+WP::err CryptoPPCryptoInterface::sign(const QByteArray &input, QByteArray &signature,
+                                      const QString &privateKeyString,
+                                      const SecureArray &keyPassword)
 {
-    CryptoPP::StringSource privateKeySource((byte*)privateKeyString.data(), privateKeyString.size(), true);
-    CryptoPP::RSASSA_PKCS1v15_SHA_Signer signer(privateKeySource);
-
     std::string signatureStd;
-    CryptoPP::StringSource((byte*)input.data(), input.size(), true,
-                           new CryptoPP::SignerFilter(randomGenerator, signer,
-                                                      new CryptoPP::StringSink(signatureStd)));
-    signature.setRawData(signatureStd.c_str(), signatureStd.size());
+    try {
+        StringSource keySource((byte*)privateKeyString.toLatin1().data(), privateKeyString.size(),
+                                      true, new HexDecoder());
+        ByteQueue byteQueue;
+        keySource.TransferTo(byteQueue);
+        byteQueue.MessageEnd();
+
+        RSASSA_PKCS1v15_SHA_Signer signer(byteQueue);
+
+        StringSource((byte*)input.data(), input.size(), true,
+                               new SignerFilter(randomGenerator, signer,
+                                                          new StringSink(signatureStd)));
+    } catch (Exception& e) {
+        qDebug() << "CryptoPP::Exception caught: "<< e.what() << endl;
+        return WP::kError;
+    } catch (...) {
+        return WP::kError;
+    }
+    signature.clear();
+    signature.append(signatureStd.c_str(), signatureStd.size());
     return WP::kOk;
 }
 
 bool CryptoPPCryptoInterface::verifySignatur(const QByteArray &message, const QByteArray &signature, const QString &publicKeyString)
 {
     try {
-        CryptoPP::StringSource publicKeySoruce((byte*)publicKeyString.data(), publicKeyString.size(), true);
-        CryptoPP::RSASSA_PKCS1v15_SHA_Verifier verifier(publicKeySoruce);
+        StringSource keySource((byte*)publicKeyString.toLatin1().data(), publicKeyString.size(), true, new HexDecoder());
+        ByteQueue byteQueue;
+        keySource.TransferTo(byteQueue);
+        byteQueue.MessageEnd();
 
-        std::string combinedMessage;
-        combinedMessage = QString(message + signature).toStdString();
-        CryptoPP::StringSource(combinedMessage, true,
-                               new CryptoPP::SignatureVerificationFilter(
+        RSASSA_PKCS1v15_SHA_Verifier verifier(byteQueue);
+
+        QByteArray data;
+        data.append(message);
+        data.append(signature);
+        StringSource((byte*)data.data(), data.size(), true,
+                               new SignatureVerificationFilter(
                                    verifier, NULL,
-                                   CryptoPP::SignatureVerificationFilter::THROW_EXCEPTION));
-    } catch (CryptoPP::Exception& e) {
+                                   SignatureVerificationFilter::THROW_EXCEPTION));
+    } catch (Exception& e) {
+        qDebug() << "CryptoPP::Exception caught: "<< e.what() << endl;
         return false;
     } catch (...) {
         return false;
