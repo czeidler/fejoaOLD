@@ -4,13 +4,13 @@
 #include "remoteauthentication.h"
 
 
-const char *kWathcBranchesStanza = "watch_branches";
+const char *kWatchBranchesStanza = "watch_branches";
 
 
 class WatchBranchesStanza : public OutStanza {
 public:
     WatchBranchesStanza(const QList<DatabaseInterface*> &branches) :
-        OutStanza(kWathcBranchesStanza)
+        OutStanza(kWatchBranchesStanza)
     {
 
         foreach (DatabaseInterface *database, branches) {
@@ -111,6 +111,8 @@ void SyncManager::handleConnectionError(WP::err error)
 
     authentication->logout();
     emit connectionError();
+
+    serverReply = NULL;
 }
 
 void SyncManager::remoteAuthenticated(WP::err error)
@@ -126,7 +128,7 @@ void SyncManager::remoteAuthenticated(WP::err error)
     IqOutStanza *iqStanza = new IqOutStanza(kGet);
     outStream.pushStanza(iqStanza);
 
-    OutStanza *watchStanza = new OutStanza(kWathcBranchesStanza);
+    OutStanza *watchStanza = new OutStanza(kWatchBranchesStanza);
     outStream.pushChildStanza(watchStanza);
 
     bool first = true;
@@ -153,7 +155,7 @@ void SyncManager::remoteAuthenticated(WP::err error)
 class WatchHandler : public InStanzaHandler {
 public:
     WatchHandler() :
-        InStanzaHandler(kWathcBranchesStanza)
+        InStanzaHandler(kWatchBranchesStanza)
     {
     }
 
