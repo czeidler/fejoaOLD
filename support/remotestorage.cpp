@@ -38,11 +38,11 @@ void RemoteDataStorage::setHTTPRemoteConnection(const QString &url)
     uid = hash();
 }
 
-void RemoteDataStorage::setSignatureAuth(const QString &userName, const QString &keyStoreId,
-                                         const QString &keyId, const QString &serverUser)
+void RemoteDataStorage::setSignatureAuth(const QString &userName, const QString &serverUser, const QString &keyStoreId,
+                                         const QString &keyId)
 {
     this->authType = "SignatureAuth";
-    this->authenticationInfo = RemoteAuthenticationInfo(userName, keyStoreId, keyId, serverUser);
+    this->authenticationInfo = RemoteAuthenticationInfo(userName, serverUser, keyStoreId, keyId);
 }
 
 RemoteConnectionInfo RemoteDataStorage::getRemoteConnectionInfo()
@@ -73,7 +73,7 @@ WP::err RemoteDataStorage::write(StorageDirectory &dir)
     WP::err error = dir.writeSafe("connection_type", getConnectionType());
     if (error != WP::kOk)
         return error;
-    error = dir.writeSafe("connection_url", connectionInfo.getUrl().path());
+    error = dir.writeSafe("connection_url", connectionInfo.getUrl().toString());
     if (error != WP::kOk)
         return error;
     error = dir.writeSafe("auth_username", authenticationInfo.getUserName());
@@ -136,7 +136,7 @@ WP::err RemoteDataStorage::load(StorageDirectory &dir)
         return error;
 
     if (authType == "SignatureAuth")
-        setSignatureAuth(authUserName, authKeyStoreId, authKey, serverUser);
+        setSignatureAuth(authUserName, serverUser, authKeyStoreId, authKey);
 
     return WP::kOk;
 }

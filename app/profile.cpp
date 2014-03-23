@@ -490,14 +490,14 @@ RemoteDataStorage *Profile::addHTTPRemote(const QString &url)
 }
 
 WP::err Profile::setSignatureAuth(RemoteDataStorage *remote, const QString &userName,
-                                  const QString &keyStoreId, const QString &keyId,
-                                  const QString &serverName)
+                                  const QString &serverName, const QString &keyStoreId,
+                                  const QString &keyId)
 {
     RemoteDataStorage *inListRemote = findRemoteDataStorage(remote->getUid());
     if (inListRemote == NULL || inListRemote != remote)
         return WP::kEntryNotFound;
 
-    remote->setSignatureAuth(userName, keyStoreId, keyId, serverName);
+    remote->setSignatureAuth(userName, serverName, keyStoreId, keyId);
     StorageDirectory dir(this, prependBaseDir("remotes/" + remote->getUid()));
     return remote->write(dir);
 }

@@ -63,8 +63,8 @@ public:
     RemoteDataStorage *addPHPRemote(const QString &url);
     RemoteDataStorage *addHTTPRemote(const QString &url);
     WP::err setSignatureAuth(RemoteDataStorage *remote, const QString &userName,
-                             const QString &keyStoreId, const QString &keyId,
-                             const QString &serverName);
+                             const QString &serverName,
+                             const QString &keyStoreId, const QString &keyId);
     WP::err connectRemote(DatabaseBranch *branch, RemoteDataStorage *remote);
     RemoteDataStorage *findRemote(const QString &remoteId);
     WP::err connectFreeBranches(RemoteDataStorage *remote);

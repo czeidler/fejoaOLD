@@ -33,7 +33,8 @@ public:
     void setPHPEncryptedRemoteConnection(const QString &url);
     void setHTTPRemoteConnection(const QString &url);
 
-    void setSignatureAuth(const QString &userName, const QString &keyStoreId, const QString &keyId, const QString &serverUser);
+    void setSignatureAuth(const QString &userName, const QString &serverUser,
+                          const QString &keyStoreId, const QString &keyId);
 
 private:
     QString hash();

@@ -304,6 +304,7 @@ void RemoteAuthenticationInfo::setServerUser(const QString &value)
 {
     serverUser = value;
 }
+
 QString RemoteAuthenticationInfo::getKeyStoreId() const
 {
     return keyStoreId;

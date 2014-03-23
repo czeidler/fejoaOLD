@@ -87,9 +87,9 @@ void CreateProfileDialog::createProfile()
     myself->setServer(server);
     myself->setServerUser(serverUser);
     myself->writeConfig();
-    profile->setSignatureAuth(remote, myself->getUid(),
+    profile->setSignatureAuth(remote, myself->getUid(),  myself->getServerUser(),
                                mainIdentity->getKeyStore()->getUid(),
-                               myself->getKeys()->getMainKeyId(), myself->getServerUser());
+                               myself->getKeys()->getMainKeyId());
 
     profile->connectFreeBranches(remote);
     profile->commit();
