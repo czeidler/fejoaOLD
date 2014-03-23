@@ -44,6 +44,9 @@ public:
     SecureArray sharedDHKey(const QString &prime, const QString &base, const QString &secret);
 
 private:
+    QString convertDERToPEM(const QString &type, const std::string &key);
+    QByteArray convertPEMToDER(const QString &key);
+
     CryptoPP::AutoSeededRandomPool randomGenerator;
 };
 

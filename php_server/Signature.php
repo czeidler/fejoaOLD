@@ -9,7 +9,7 @@ class SignatureVerifier {
 	public function __construct($publickey) {
 		$this->rsa = new Crypt_RSA();
 		$this->rsa->setSignatureMode(CRYPT_RSA_SIGNATURE_PKCS1);
-		$this->rsa->setHash('md5');
+		$this->rsa->setHash('sha1');
 
 		$this->rsa->loadKey($publickey);
 	}

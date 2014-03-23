@@ -25,40 +25,13 @@ WP::err CryptoPPCryptoInterface::generateKeyPair(QString &certificate, QString &
         CryptoPP::RSAES_OAEP_SHA_Encryptor encryptor(decryptor);
 
         std::string privateKeyStd;
-        decryptor.AccessKey().Save(
-                 CryptoPP::HexEncoder(
-                    new CryptoPP::StringSink(privateKeyStd)
-                 ).Ref()
-              );
-        privateKey = QString::fromStdString(privateKeyStd);
+        decryptor.AccessKey().Save(CryptoPP::StringSink(privateKeyStd).Ref());
+        privateKey = convertDERToPEM("RSA PRIVATE KEY", privateKeyStd);
 
         std::string publicKeyStd;
-        encryptor.AccessKey().Save(
-                 CryptoPP::HexEncoder(
-                    new CryptoPP::StringSink(publicKeyStd)
-                 ).Ref()
-              );
-        publicKey = QString::fromStdString(publicKeyStd);
-        certificate = QString::fromStdString(publicKeyStd);
-        /*
-        RSA::PrivateKey rsaPrivateKey;
-        rsaPrivateKey.GenerateRandomWithKeySize(randomGenerator, 2048);
-        RSA::PublicKey rsaPublicKey(rsaPrivateKey);
-
-        std::string buffer;
-        rsaPrivateKey.Save(StringSink(buffer).Ref());
-        std::string bufferHex;
-        StringSource(buffer, true, new HexEncoder(new StringSink(bufferHex)));
-        privateKey = QString::fromStdString(bufferHex);
-
-        buffer = "";
-        bufferHex = "";
-        rsaPublicKey.Save(StringSink(buffer).Ref());
-
-        StringSource(buffer, true, new HexEncoder(new StringSink(bufferHex)));
-
-        publicKey = QString::fromStdString(bufferHex);
-        certificate = QString::fromStdString(bufferHex);*/
+        encryptor.AccessKey().Save((CryptoPP::StringSink(publicKeyStd)).Ref());
+        publicKey = convertDERToPEM("RSA PUBLIC KEY", publicKeyStd);
+        certificate = publicKey;
     } catch (Exception& e) {
         qDebug() << "CryptoPP::Exception caught: "<< e.what() << endl;
         return WP::kError;
@@ -161,9 +134,10 @@ WP::err CryptoPPCryptoInterface::decryptSymmetric(const QByteArray &input, Secur
 
 WP::err CryptoPPCryptoInterface::encyrptAsymmetric(const QByteArray &input, QByteArray &encrypted, const QString &certificate)
 {
+    QByteArray derPublicKey = convertPEMToDER(certificate);
     std::string cipher;
     try {
-        StringSource keySource((byte*)certificate.toLatin1().data(), certificate.size(), true, new HexDecoder());
+        StringSource keySource((byte*)derPublicKey.data(), derPublicKey.size(), true);
         ByteQueue byteQueue;
         keySource.TransferAllTo(byteQueue);
         byteQueue.MessageEnd();
@@ -189,9 +163,10 @@ WP::err CryptoPPCryptoInterface::encyrptAsymmetric(const QByteArray &input, QByt
 
 WP::err CryptoPPCryptoInterface::decryptAsymmetric(const QByteArray &input, QByteArray &plain, const QString &privateKey, const SecureArray &keyPassword, const QString &certificate)
 {
+    QByteArray derPrivateKey = convertPEMToDER(privateKey);
     std::string result;
     try {
-        StringSource keySource((byte*)privateKey.toLatin1().data(), privateKey.size(), true, new HexDecoder());
+        StringSource keySource((byte*)derPrivateKey.data(), derPrivateKey.size(), true);
         ByteQueue byteQueue;
         keySource.TransferTo(byteQueue);
         byteQueue.MessageEnd();
@@ -243,10 +218,10 @@ WP::err CryptoPPCryptoInterface::sign(const QByteArray &input, QByteArray &signa
                                       const QString &privateKeyString,
                                       const SecureArray &keyPassword)
 {
+    QByteArray derPrivateKey = convertPEMToDER(privateKeyString);
     std::string signatureStd;
     try {
-        StringSource keySource((byte*)privateKeyString.toLatin1().data(), privateKeyString.size(),
-                                      true, new HexDecoder());
+        StringSource keySource((byte*)derPrivateKey.data(), derPrivateKey.size(), true);
         ByteQueue byteQueue;
         keySource.TransferTo(byteQueue);
         byteQueue.MessageEnd();
@@ -269,8 +244,9 @@ WP::err CryptoPPCryptoInterface::sign(const QByteArray &input, QByteArray &signa
 
 bool CryptoPPCryptoInterface::verifySignatur(const QByteArray &message, const QByteArray &signature, const QString &publicKeyString)
 {
+    QByteArray derPublicKey = convertPEMToDER(publicKeyString);
     try {
-        StringSource keySource((byte*)publicKeyString.toLatin1().data(), publicKeyString.size(), true, new HexDecoder());
+        StringSource keySource((byte*)derPublicKey.data(), derPublicKey.size(), true);
         ByteQueue byteQueue;
         keySource.TransferTo(byteQueue);
         byteQueue.MessageEnd();
@@ -302,4 +278,51 @@ SecureArray CryptoPPCryptoInterface::sharedDHKey(const QString &prime, const QSt
 {
     // todo implement
     return QByteArray();
+}
+
+QString CryptoPPCryptoInterface::convertDERToPEM(const QString &type, const std::string &key)
+{
+    QByteArray base64Key;
+    base64Key.append(key.c_str(), key.size());
+    base64Key = base64Key.toBase64();
+
+    const int kLineLength = 64;
+    const char *dataPointer = base64Key.data();
+    const int dataSize = base64Key.size();
+    int position = 0;
+    QString pemKey;
+    pemKey.append("-----BEGIN " + type + "-----\r\n");
+    while (position < dataSize) {
+        int chunkSize = dataSize - position;
+        if (chunkSize > kLineLength)
+            chunkSize = kLineLength;
+        QByteArray chunk;
+        // note: the the data is not copied when using setRawData
+        chunk.setRawData(dataPointer + position, chunkSize);
+        pemKey.append(chunk);
+        pemKey.append("\r\n");
+
+        position += chunkSize;
+    }
+    pemKey.append("-----END " + type + "-----");
+    return pemKey;
+}
+
+QByteArray CryptoPPCryptoInterface::convertPEMToDER(const QString &key)
+{
+    QTextStream stream(const_cast<QString*>(&key));
+
+    QString line = stream.readLine();
+    if (!line.startsWith("-----BEGIN"))
+        return QByteArray();
+
+    QByteArray derKey;
+    while (!stream.atEnd()) {
+        line = stream.readLine();
+        if (line.startsWith("-----END"))
+            break;
+        derKey.append(line);
+    }
+
+    return QByteArray::fromBase64(derKey);
 }
