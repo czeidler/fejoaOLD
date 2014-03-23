@@ -127,7 +127,7 @@ WP::err CryptoPPCryptoInterface::encryptSymmetric(const SecureArray &input, QByt
         StringSource((byte*)input.data(), input.size(), true,
                 new StreamTransformationFilter(encryptor, new StringSink(cipher)));
     } catch (Exception& e) {
-        qDebug() << "CryptoPP::Exception caught: "<< e.what() << endl;
+        qDebug() << "encryptSymmetric: CryptoPP::Exception caught: "<< e.what() << endl;
         return WP::kError;
     } catch (...) {
         return WP::kError;
@@ -149,10 +149,10 @@ WP::err CryptoPPCryptoInterface::decryptSymmetric(const QByteArray &input, Secur
                      new StreamTransformationFilter(decryptor, new StringSink(decryptedStd)));
 
     } catch (Exception& e) {
-        qDebug() << "CryptoPP::Exception caught: "<< e.what() << endl;
-        return WP::kError;
+        qDebug() << "decryptSymmetric: CryptoPP::Exception caught: "<< e.what() << endl;
+        return WP::kBadKey;
     } catch (...) {
-        return WP::kError;
+        return WP::kBadKey;
     }
     decrypted.clear();
     decrypted.append(decryptedStd.c_str(), decryptedStd.size());
@@ -176,7 +176,7 @@ WP::err CryptoPPCryptoInterface::encyrptAsymmetric(const QByteArray &input, QByt
                             new PK_EncryptorFilter(randomGenerator, encryptor,
                                                              new StringSink(cipher)));
     } catch (Exception& e) {
-        qDebug() << "CryptoPP::Exception caught: "<< e.what() << endl;
+        qDebug() << "encyrptAsymmetric: CryptoPP::Exception caught: "<< e.what() << endl;
         return WP::kError;
     } catch (...) {
         return WP::kError;
@@ -201,7 +201,7 @@ WP::err CryptoPPCryptoInterface::decryptAsymmetric(const QByteArray &input, QByt
         StringSource((byte*)input.data(), input.size(), true,
                                new PK_DecryptorFilter(randomGenerator, decoder, new StringSink(result)));
     } catch (Exception& e) {
-        qDebug() << "CryptoPP::Exception caught: "<< e.what() << endl;
+        qDebug() << "decryptAsymmetric: CryptoPP::Exception caught: "<< e.what() << endl;
         return WP::kError;
     } catch (...) {
         return WP::kError;
@@ -216,8 +216,7 @@ QByteArray CryptoPPCryptoInterface::sha1Hash(const QByteArray &string) const
     SHA1 sha1;
     std::string hash = "";
     StringSource((byte*)string.data(), string.size(), true,
-                           new HashFilter(sha1, new HexEncoder(
-                                                        new StringSink(hash))));
+                           new HashFilter(sha1, new StringSink(hash)));
     QByteArray out;
     return out.append(hash.data(), hash.size());
 }
@@ -227,8 +226,7 @@ QByteArray CryptoPPCryptoInterface::sha2Hash(const QByteArray &string) const
     SHA256 sha;
     std::string hash = "";
     StringSource((byte*)string.data(), string.size(), true,
-                           new HashFilter(sha, new HexEncoder(
-                                                        new StringSink(hash))));
+                           new HashFilter(sha, new StringSink(hash)));
     QByteArray out;
     return out.append(hash.data(), hash.size());
 }
@@ -259,7 +257,7 @@ WP::err CryptoPPCryptoInterface::sign(const QByteArray &input, QByteArray &signa
                                new SignerFilter(randomGenerator, signer,
                                                           new StringSink(signatureStd)));
     } catch (Exception& e) {
-        qDebug() << "CryptoPP::Exception caught: "<< e.what() << endl;
+        qDebug() << "sign: CryptoPP::Exception caught: "<< e.what() << endl;
         return WP::kError;
     } catch (...) {
         return WP::kError;
@@ -287,7 +285,7 @@ bool CryptoPPCryptoInterface::verifySignatur(const QByteArray &message, const QB
                                    verifier, NULL,
                                    SignatureVerificationFilter::THROW_EXCEPTION));
     } catch (Exception& e) {
-        qDebug() << "CryptoPP::Exception caught: "<< e.what() << endl;
+        qDebug() << "verifySignatur: CryptoPP::Exception caught: "<< e.what() << endl;
         return false;
     } catch (...) {
         return false;
