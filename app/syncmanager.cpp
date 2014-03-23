@@ -84,7 +84,7 @@ void SyncManager::startWatching()
     if (authentication->isVerified())
         remoteAuthenticated(WP::kOk);
     else {
-        connect(authentication, SIGNAL(authenticationAttemptFinished(WP::err)),
+        connect(authentication.data(), SIGNAL(authenticationAttemptFinished(WP::err)),
                 this, SLOT(remoteAuthenticated(WP::err)));
         authentication->login();
     }

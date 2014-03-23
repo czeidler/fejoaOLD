@@ -13,7 +13,8 @@ class UserIdentity;
 class MailMessenger : public RemoteConnectionJob {
 Q_OBJECT
 public:
-    MailMessenger(Mailbox *mailbox, const MessageChannelInfo::Participant *receiver, Profile *profile);
+    MailMessenger(Mailbox *mailbox, const MessageChannelInfo::Participant *receiver,
+                  Profile *profile, MessageRef message);
     ~MailMessenger();
 
     virtual void run(RemoteConnectionJobQueue *jobQueue);
@@ -31,22 +32,21 @@ private:
     WP::err startContactRequest();
 
     Mailbox *mailbox;
-
-    UserIdentity *userIdentity;
     const MessageChannelInfo::Participant *receiver;
     Profile *profile;
+    MessageRef message;
+
+    UserIdentity *userIdentity;
+
     QString targetServer;
     QString targetUser;
 
     Contact *targetContact;
 
     ContactRequest* contactRequest;
-
-    MessageRef message;
-
     RemoteConnection *remoteConnection;
     RemoteConnectionReply *serverReply;
-    RemoteAuthentication *authentication;
+    RemoteAuthenticationRef authentication;
 };
 
 typedef QSharedPointer<MailMessenger> MailMessengerRef;

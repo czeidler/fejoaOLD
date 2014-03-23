@@ -65,7 +65,7 @@ void RemoteConnectionJobQueue::setRemoteConnection(RemoteConnection *value)
     remoteConnection = value;
 }
 
-RemoteAuthentication *RemoteConnectionJobQueue::getRemoteAuthentication(
+RemoteAuthenticationRef RemoteConnectionJobQueue::getRemoteAuthentication(
         const RemoteAuthenticationInfo &info, KeyStoreFinder *keyStoreFinder)
 {
     foreach (AuthenticationEntry *entry, authenticationList) {
@@ -164,10 +164,12 @@ RemoteConnection *ConnectionManager::ConnectionEntry::createRemoteConnection(
 
 
 RemoteConnectionJobQueue::AuthenticationEntry::AuthenticationEntry(
-        const RemoteAuthenticationInfo &info, KeyStoreFinder *keyStoreFinder, RemoteConnection *remoteConnection) :
-    remoteAuthentication(NULL)
+        const RemoteAuthenticationInfo &info, KeyStoreFinder *keyStoreFinder,
+        RemoteConnection *remoteConnection)
 {
     authenticationInfo = info;
-    if (authenticationInfo.getType() == RemoteAuthenticationInfo::kSignature)
-        remoteAuthentication = new SignatureAuthentication(remoteConnection, keyStoreFinder, info);
+    if (authenticationInfo.getType() == RemoteAuthenticationInfo::kSignature) {
+        remoteAuthentication = RemoteAuthenticationRef(
+                    new SignatureAuthentication(remoteConnection, keyStoreFinder, info));
+    }
 }

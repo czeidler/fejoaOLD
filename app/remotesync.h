@@ -29,7 +29,7 @@ private slots:
 private:
     DatabaseInterface *database;
     RemoteDataStorage* remoteStorage;
-    RemoteAuthentication *authentication;
+    RemoteAuthenticationRef authentication;
     RemoteConnection *remoteConnection;
     RemoteConnectionReply *serverReply;
 

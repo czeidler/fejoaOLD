@@ -4,8 +4,8 @@
 #include "protocolparser.h"
 
 
-RemoteAuthentication::RemoteAuthentication(RemoteConnection *_connection) :
-    connection(_connection),
+RemoteAuthentication::RemoteAuthentication(RemoteConnection *connection) :
+    connection(connection),
     authenticationReply(NULL),
     authenticationInProgress(false),
     verified(false)

@@ -39,7 +39,7 @@ public:
     RemoteConnection *getRemoteConnection() const;
     void setRemoteConnection(RemoteConnection *value);
 
-    RemoteAuthentication *getRemoteAuthentication(const RemoteAuthenticationInfo &info, KeyStoreFinder *keyStoreFinder);
+    RemoteAuthenticationRef getRemoteAuthentication(const RemoteAuthenticationInfo &info, KeyStoreFinder *keyStoreFinder);
 
 private slots:
     void onJobDone(WP::err error);
@@ -61,7 +61,7 @@ private:
                             RemoteConnection *remoteConnection);
 
         RemoteAuthenticationInfo authenticationInfo;
-        RemoteAuthentication *remoteAuthentication;
+        RemoteAuthenticationRef remoteAuthentication;
     };
 
     QList<AuthenticationEntry*> authenticationList;

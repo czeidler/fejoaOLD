@@ -7,11 +7,12 @@
 #include "useridentity.h"
 
 
-MailMessenger::MailMessenger(Mailbox *mailbox, const MessageChannelInfo::Participant *receiver, Profile *profile) :
+MailMessenger::MailMessenger(Mailbox *mailbox, const MessageChannelInfo::Participant *receiver, Profile *profile, MessageRef message) :
     mailbox(mailbox),
-    userIdentity(mailbox->getOwner()),
     receiver(receiver),
     profile(profile),
+    message(message),
+    userIdentity(mailbox->getOwner()),
     targetContact(NULL),
     contactRequest(NULL),
     remoteConnection(NULL)
@@ -21,8 +22,6 @@ MailMessenger::MailMessenger(Mailbox *mailbox, const MessageChannelInfo::Partici
 
 MailMessenger::~MailMessenger()
 {
-    delete authentication;
-    delete remoteConnection;
 }
 
 void MailMessenger::run(RemoteConnectionJobQueue *jobQueue)
@@ -143,7 +142,7 @@ void MailMessenger::onContactFound(WP::err error)
         authConnected(WP::kOk);
     else {
         authentication->disconnect(this);
-        connect(authentication, SIGNAL(authenticationAttemptFinished(WP::err)),
+        connect(authentication.data(), SIGNAL(authenticationAttemptFinished(WP::err)),
                 this, SLOT(authConnected(WP::err)));
         authentication->login();
     }
@@ -236,7 +235,7 @@ void MultiMailMessenger::onSendResult(WP::err error)
         return;
     }
 
-    MailMessengerRef mailMessenger(new MailMessenger(mailbox, participant, profile));
+    MailMessengerRef mailMessenger(new MailMessenger(mailbox, participant, profile, message));
     QString targetServer = mailMessenger->getTargetServer();
     if (targetServer == "") {
         onSendResult(WP::kBadValue);

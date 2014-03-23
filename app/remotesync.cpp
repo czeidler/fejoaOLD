@@ -28,7 +28,7 @@ void RemoteSync::run(RemoteConnectionJobQueue *jobQueue)
     if (authentication->isVerified())
         syncConnected(WP::kOk);
     else {
-        connect(authentication, SIGNAL(authenticationAttemptFinished(WP::err)),
+        connect(authentication.data(), SIGNAL(authenticationAttemptFinished(WP::err)),
                 this, SLOT(syncConnected(WP::err)));
         authentication->login();
     }

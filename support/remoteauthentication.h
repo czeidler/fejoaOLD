@@ -75,6 +75,8 @@ protected:
     bool verified;
 };
 
+typedef QSharedPointer<RemoteAuthentication> RemoteAuthenticationRef;
+
 
 class KeyStoreFinder;
 

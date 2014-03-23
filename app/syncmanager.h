@@ -43,7 +43,7 @@ private:
     RemoteDataStorage* remoteDataStorage;
     QList<RemoteSyncRef> syncEntries;
 
-    RemoteAuthentication *authentication;
+    RemoteAuthenticationRef authentication;
     RemoteConnection *remoteConnection;
     RemoteConnectionReply *serverReply;
 
