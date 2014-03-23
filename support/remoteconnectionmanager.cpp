@@ -80,17 +80,15 @@ RemoteAuthentication *RemoteConnectionJobQueue::getRemoteAuthentication(
 
 void RemoteConnectionJobQueue::onJobDone(WP::err error)
 {
-    if (runningJob != idleJob)
-        delete runningJob;
-    runningJob = NULL;
+    runningJob = RemoteConnectionJobRef(NULL);
     reschedule();
 }
 
 void RemoteConnectionJobQueue::startJob(RemoteConnectionJobRef job)
 {
-    runningJob = job.data();
+    runningJob = job;
     runningJob->run(this);
-    connect(runningJob, SIGNAL(jobDone(WP::err)), this, SLOT(onJobDone(WP::err)));
+    connect(runningJob.data(), SIGNAL(jobDone(WP::err)), this, SLOT(onJobDone(WP::err)));
 }
 
 

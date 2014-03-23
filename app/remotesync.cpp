@@ -69,8 +69,6 @@ void RemoteSync::syncConnected(WP::err code)
 
     outStream.flush();
 
-    if (serverReply != NULL)
-        serverReply->disconnect();
     serverReply = remoteConnection->send(outData);
     connect(serverReply, SIGNAL(finished(WP::err)), this, SLOT(syncReply(WP::err)));
 }

@@ -52,7 +52,7 @@ private:
 
     RemoteConnectionJobRef idleJob;
 
-    RemoteConnectionJob *runningJob;
+    RemoteConnectionJobRef runningJob;
     QList<RemoteConnectionJobRef> jobQueue;
 
     class AuthenticationEntry {
