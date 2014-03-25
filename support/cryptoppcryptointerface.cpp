@@ -86,8 +86,7 @@ QString CryptoPPCryptoInterface::generateUid()
     StringSource(data.BytePtr(), data.size(), true,
                            new HashFilter(sha1, new HexEncoder(
                                                         new StringSink(hash))));
-    QString out = hash.c_str();
-    return out;
+    return QString::fromStdString(hash).toLower();
 }
 
 WP::err CryptoPPCryptoInterface::encryptSymmetric(const SecureArray &input, QByteArray &encrypted, const SecureArray &key, const QByteArray &iv, const char *algo)
@@ -209,9 +208,9 @@ QByteArray CryptoPPCryptoInterface::sha2Hash(const QByteArray &string) const
 QString CryptoPPCryptoInterface::toHex(const QByteArray &string) const
 {
     std::string encoded;
-    StringSource source((byte*)string.data(), string.size(), true,
+    StringSource((byte*)string.data(), string.size(), true,
                         new HexEncoder(new StringSink(encoded)));
-    return QString::fromStdString(encoded);
+    return QString::fromStdString(encoded).toLower();
 }
 
 WP::err CryptoPPCryptoInterface::sign(const QByteArray &input, QByteArray &signature,
@@ -291,7 +290,7 @@ QString CryptoPPCryptoInterface::convertDERToPEM(const QString &type, const std:
     const int dataSize = base64Key.size();
     int position = 0;
     QString pemKey;
-    pemKey.append("-----BEGIN " + type + "-----\r\n");
+    pemKey.append("-----BEGIN " + type + "-----\n");
     while (position < dataSize) {
         int chunkSize = dataSize - position;
         if (chunkSize > kLineLength)
@@ -300,7 +299,7 @@ QString CryptoPPCryptoInterface::convertDERToPEM(const QString &type, const std:
         // note: the the data is not copied when using setRawData
         chunk.setRawData(dataPointer + position, chunkSize);
         pemKey.append(chunk);
-        pemKey.append("\r\n");
+        pemKey.append("\n");
 
         position += chunkSize;
     }
