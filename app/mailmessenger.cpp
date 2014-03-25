@@ -34,16 +34,14 @@ void MailMessenger::run(RemoteConnectionJobQueue *jobQueue)
 
 
     Contact *contact = userIdentity->findContact(receiver->address);
-    if (contact != NULL) {
+    if (contact != NULL)
         onContactFound(WP::kOk);
-    } else if (receiver->uid != "") {
+    else if (receiver->uid != "") {
         contact = userIdentity->findContactByUid(receiver->uid);
-        if (contact != NULL) {
+        if (contact != NULL)
             onContactFound(WP::kOk);
-        }
-    }
-
-    startContactRequest();
+    } else
+        startContactRequest();
 }
 
 void MailMessenger::abort()
