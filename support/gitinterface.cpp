@@ -530,6 +530,8 @@ WP::err PackManager::mergeCommit(const git_oid *treeOid, git_commit *parent1, gi
 }
 
 
+bool GitInterface::sGitThreadsHaveBeeInit = false;
+
 GitInterface::GitInterface()
     :
     repository(NULL),
@@ -537,6 +539,10 @@ GitInterface::GitInterface()
     currentBranch("master")
 {
     newRootTreeOid.id[0] = '\0';
+    if (!sGitThreadsHaveBeeInit) {
+        git_threads_init();
+        sGitThreadsHaveBeeInit = true;
+    }
 }
 
 
@@ -805,10 +811,7 @@ WP::err GitInterface::updateTip(const QString &commit)
     git_oid id;
     git_oid_fromstr(&id, commit.toLatin1().data());
     git_reference *newRef;
-    git_signature signature;
-    signature.email = "";
-    signature.name = "";
-    int status = git_reference_create(&newRef, repository, refPath.toStdString().c_str(), &id, true, &signature, "");
+    int status = git_reference_create(&newRef, repository, refPath.toStdString().c_str(), &id, true);
     if (status != 0)
         return WP::kError;
     return WP::kOk;
@@ -923,11 +926,11 @@ WP::err GitInterface::getDiff(const QString &baseCommit, const QString &endCommi
     if (baseTree == NULL || endTree == NULL)
         return WP::kError;
 
-    git_diff *diff;
+    git_diff_list *diff;
     int error = git_diff_tree_to_tree(&diff, repository, baseTree.data(), endTree.data(), NULL);
     if (error != 0)
         return WP::kError;
-    QSharedPointer<git_diff> diffDeleter(diff, git_diff_free);
+    QSharedPointer<git_diff_list>(diff, git_diff_list_free);
 
     error = git_diff_foreach(diff, diffFileHandler, NULL, NULL, &databaseDiff);
     if (error != 0)

@@ -19,8 +19,5 @@ TEMPLATE = app
 SOURCES += \
     fejoatest.cpp
 
-LIBS += -L$$PWD/../../libgit2/build -lgit2
 LIBS += -L$$PWD/../../build-fejoa-Desktop-Debug/support/ -lfejoa_support
-LIBS += -L$$PWD/../../libgit2/build -lgit2
-LIBS += -L/user/lib -lcryptopp
-
+LIBS += -L/user/lib -lcryptopp -lgit2

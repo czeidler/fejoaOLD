@@ -4,8 +4,3 @@ QT += network
 
 INCLUDEPATH += $$PWD/support
 SRC_DIR = $$PWD
-
-#own git2:
-INCLUDEPATH += $$PWD/../libgit2/include
-LIBS += -L$$PWD/../libgit2/build
-DEPENDPATH += $$PWD/../libgit2

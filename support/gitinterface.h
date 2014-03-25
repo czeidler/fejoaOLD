@@ -57,6 +57,8 @@ private:
     git_tree *getCommitTree(const QString &commitHash) const;
 
 private:
+    static bool sGitThreadsHaveBeeInit;
+
     QString repositoryPath;
     git_repository *repository;
     git_odb *objectDatabase;
