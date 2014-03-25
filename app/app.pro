@@ -14,52 +14,49 @@
 include(../defaults.pri)
 
 # The .cpp file which was generated for your project. Feel free to hack it.
-SOURCES += main.cpp \
-    messagereceiver.cpp \
-    useridentity.cpp \
-    profile.cpp \
-    mainapplication.cpp \
-    remotesync.cpp \
-    mailbox.cpp \
-    syncmanager.cpp \
-    contactrequest.cpp \
+SOURCES += \
     contact.cpp \
-    mailmessenger.cpp \
+    contactrequest.cpp \
+    main.cpp \
+    mainapplication.cpp \
     mail.cpp \
+    mailbox.cpp \
+    mailmessenger.cpp \
+    messagereceiver.cpp \
     messagethreaddatamodel.cpp \
     gui/createprofiledialog.cpp \
+    gui/infostatuswidget.cpp \
     gui/mainwindow.cpp \
     gui/messageview.cpp \
+    gui/newmessageview.cpp \
     gui/passworddialog.cpp \
     gui/threadview.cpp \
     gui/useridentityview.cpp \
-    gui/newmessageview.cpp \
-    gui/infostatuswidget.cpp
+    profile.cpp \
+    useridentity.cpp \
 
 # Installation path
 # target.path =
 
 HEADERS += \
-    messagereceiver.h \
-    useridentity.h \
-    profile.h \
-    mainapplication.h \
-    remotesync.h \
-    mailbox.h \
-    syncmanager.h \
-    contactrequest.h \
     contact.h \
-    mailmessenger.h \
+    contactrequest.h \
     mail.h \
+    mailbox.h \
+    mailmessenger.h \
+    mainapplication.h \
+    messagereceiver.h \
     messagethreaddatamodel.h \
     gui/createprofiledialog.h \
+    gui/infostatuswidget.h \
     gui/mainwindow.h \
     gui/messageview.h \
+    gui/newmessageview.h \
     gui/passworddialog.h \
     gui/threadview.h \
     gui/useridentityview.h \
-    gui/newmessageview.h \
-    gui/infostatuswidget.h
+    profile.h \
+    useridentity.h \
 
 FORMS += \
     gui/mainwindow.ui \

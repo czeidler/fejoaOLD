@@ -5,8 +5,9 @@
 
 #include "databaseinterface.h"
 #include "error_codes.h"
-#include "profile.h"
 #include "remoteconnectionmanager.h"
+
+class RemoteDataStorage;
 
 // preforms a push or pull
 class RemoteSync : public RemoteConnectionJob    
