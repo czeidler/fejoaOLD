@@ -109,6 +109,7 @@ void SyncManager::handleConnectionError(WP::err error)
 {
     abort();
 
+    // TODO: we don't need to lock out if we just paused
     authentication->logout();
     emit connectionError();
 

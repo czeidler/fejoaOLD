@@ -91,11 +91,18 @@ class AccountAuthSignedStanzaHandler extends InStanzaHandler {
 		return true;
 	}
 
+	private function removeDuplicates($array){
+		$cleanedArray = array();
+		foreach($array as $key=>$value)
+			$cleanedArray[$value] = 1;
+		return array_keys($cleanedArray);
+	}
+
 	public function finished() {
 		$loginServerUser = Session::get()->getLoginServerUser();
 		$userIdentity = Session::get()->getMainUserIdentity($loginServerUser);
 
-		$roles = array();
+		$roles = Session::get()->getUserRoles();
 		if ($userIdentity != null) {
 			$loginUser = Session::get()->getLoginUser();
 			$myself = $userIdentity->getMyself();
@@ -111,6 +118,9 @@ class AccountAuthSignedStanzaHandler extends InStanzaHandler {
 		} else {
 			$this->setupLogin($roles);
 		}
+		// cleanup from double logins.
+		//TODO: check earlier if verification was neccessary? so that we don't need to cleanup here
+		$roles = $this->removeDuplicates($roles);
 		Session::get()->setUserRoles($roles);
 
 		// produce output

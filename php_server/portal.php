@@ -154,8 +154,10 @@ writeToOutput($response);
 // debug output:
 $debugStream = new ProtocolOutStream();
 $stanza = new OutStanza("debug");
-$stanza->addAttribute("account_user", Session::get()->getAccountUser());
-$stanza->addAttribute("login_user", Session::get()->getLoginServerUser());
+$roles = "";
+foreach (Session::get()->getUserRoles() as $role)
+  $roles = $roles.$role.",";
+$stanza->addAttribute("roles", $roles);
 $stanza->addAttribute("session_id", session_id());
 $debugStream->pushStanza($stanza);
 writeToOutput($debugStream->flush());
