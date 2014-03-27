@@ -14,6 +14,8 @@ public:
     DatabaseDir(const QString &dirName = "");
     ~DatabaseDir();
 
+    bool isEmpty() const;
+
     const DatabaseDir *findDirectory(const QString &path) const;
     void addPath(const QString &path);
 

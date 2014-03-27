@@ -241,7 +241,6 @@ void Mailbox::setOwner(UserIdentity *userIdentity)
 {
     this->owner = userIdentity;
     readMailDatabase();
-    threadList.sort();
 }
 
 UserIdentity *Mailbox::getOwner() const
@@ -316,7 +315,15 @@ MessageThread *Mailbox::findMessageThread(const QString &channelId)
 
 void Mailbox::onNewDiffs(const DatabaseDiff &diff)
 {
-    readMailDatabase();
+    // add new
+    const DatabaseDir &added = diff.added;
+        //dir.
+
+
+    // removed or modified entries
+    // TODO: handle cases individually
+    if (!diff.removed.isEmpty() || !diff.modified.isEmpty())
+        readMailDatabase();
 }
 
 WP::err Mailbox::readMailDatabase()
@@ -339,6 +346,8 @@ WP::err Mailbox::readMailDatabase()
         }
 
     }
+
+    threadList.sort();
     return WP::kOk;
 }
 

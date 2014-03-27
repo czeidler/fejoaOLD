@@ -52,6 +52,15 @@ DatabaseDir::~DatabaseDir()
         delete dir;
 }
 
+bool DatabaseDir::isEmpty() const
+{
+    if (files.size() > 0)
+        return false;
+    if (directories.size() > 0)
+        return false;
+    return true;
+}
+
 const DatabaseDir *DatabaseDir::findDirectory(const QString &path) const
 {
     QStringList parts = path.split("/");
