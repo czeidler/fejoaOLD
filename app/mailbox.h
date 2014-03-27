@@ -73,7 +73,11 @@ private:
     MessageChannel* readChannel(const QString &channelPath);
 
     WP::err readMailDatabase();
+    WP::err readThread(const QString &channelPath);
     WP::err readThreadContent(const QString &channelPath, MessageThread *thread);
+    WP::err readThreadInfo(const QString &infoPath, MessageThread *thread);
+    WP::err readThreadMessage(const QString &messagePath, MessageThread *thread, MessageRef& message);
+    void onNewMessageArrived(MessageThread *thread, MessageRef& message);
 
     WP::err storeMessage(MessageRef message, MessageChannelRef channel);
     WP::err storeChannel(MessageChannelRef channel);
