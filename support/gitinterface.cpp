@@ -919,15 +919,59 @@ int diffFileHandler(const git_diff_delta *delta, float progress, void *payload) 
     return 0;
 }
 
+int listTree(const char *root, const git_tree_entry *entry, void *payload) {
+    QStringList *list = (QStringList*)payload;
+    if (git_tree_entry_type(entry) == GIT_OBJ_BLOB)
+        list->append(QString(root) + "/" +  git_tree_entry_name(entry));
+    return 0;
+}
+
+void diff(git_tree *base, git_tree *end, DatabaseDiff &databaseDiff) {
+    QStringList baseList;
+    git_tree_walk(base, GIT_TREEWALK_PRE, listTree, &baseList);
+    QStringList endList;
+    git_tree_walk(end, GIT_TREEWALK_PRE, listTree, &endList);
+
+    int a = 0;
+    int b = 0;
+    while (a < baseList.size() || b < endList.size()) {
+        int cmp = 0;
+        if (a < baseList.size() && b < endList.size())
+            cmp = baseList.at(a).compare(endList.at(b));
+        else
+            cmp = 0;
+        if (b >= endList.size() || cmp < 0) {
+            // removed
+            databaseDiff.removed.addPath(endList.at(a));
+            a++;
+        } else if (a >= endList.size() || cmp > 0) {
+            // added
+            databaseDiff.added.addPath(endList.at(b));
+            b++;
+        } else {
+            a++;
+            b++;
+        }
+    }
+}
+
 WP::err GitInterface::getDiff(const QString &baseCommit, const QString &endCommit, DatabaseDiff &databaseDiff)
 {
-    QSharedPointer<git_tree> baseTree = QSharedPointer<git_tree>(getCommitTree(baseCommit), git_tree_free);
-    QSharedPointer<git_tree> endTree = QSharedPointer<git_tree>(getCommitTree(endCommit), git_tree_free);
+    QSharedPointer<git_tree> baseTree(getCommitTree(baseCommit), git_tree_free);
+    QSharedPointer<git_tree> endTree(getCommitTree(endCommit), git_tree_free);
     if (baseTree == NULL || endTree == NULL)
         return WP::kError;
 
+    // use home grown diff method TODO: why the libgit2 version is not working?
+    diff(baseTree.data(), endTree.data(), databaseDiff);
+/*
+    git_diff_options diffopts = GIT_DIFF_OPTIONS_INIT;
+    diffopts.flags = GIT_DIFF_FORCE_BINARY | GIT_DIFF_INCLUDE_UNTRACKED
+            | GIT_DIFF_INCLUDE_UNMODIFIED | GIT_DIFF_INCLUDE_IGNORED
+            | GIT_DIFF_RECURSE_UNTRACKED_DIRS;
+
     git_diff_list *diff;
-    int error = git_diff_tree_to_tree(&diff, repository, baseTree.data(), endTree.data(), NULL);
+    int error = git_diff_tree_to_tree(&diff, repository, baseTree.data(), endTree.data(), &diffopts);
     if (error != 0)
         return WP::kError;
     QSharedPointer<git_diff_list>(diff, git_diff_list_free);
@@ -935,6 +979,7 @@ WP::err GitInterface::getDiff(const QString &baseCommit, const QString &endCommi
     error = git_diff_foreach(diff, diffFileHandler, NULL, NULL, &databaseDiff);
     if (error != 0)
         return WP::kError;
+        */
     return WP::kOk;
 }
 
