@@ -14,7 +14,7 @@ class AccountAuthStanzaHandler extends InStanzaHandler {
 	private $inStreamReader;
 
 	private $authType;
-	private $userName;
+	private $loginUser;
 	private $serverUser;
 
 	public function __construct($inStreamReader) {
@@ -24,9 +24,9 @@ class AccountAuthStanzaHandler extends InStanzaHandler {
 
 	public function handleStanza($xml) {
 		$this->authType = $xml->getAttribute("type");
-		$this->userName = $xml->getAttribute("user");
-		$this->serverUser = $xml->getAttribute("server_user");
-		if ($this->authType == "" || $this->userName == "" || $this->userName == "")
+		$this->loginUser = $xml->getAttribute("loginUser");
+		$this->serverUser = $xml->getAttribute("serverUser");
+		if ($this->authType == "" || $this->loginUser == "" || $this->loginUser == "")
 			return false;
 		return true;
 	}
@@ -36,16 +36,14 @@ class AccountAuthStanzaHandler extends InStanzaHandler {
 			$this->inStreamReader->appendResponse(IqErrorOutStanza::makeErrorMessage("Unsupported authentication type."));
 
 		$signToken = "rand".rand()."time".time();
-		Session::get()->setSignatureToken($signToken);
-		Session::get()->setLoginUser($this->userName);
-		Session::get()->setLoginServerUser($this->serverUser);
+		Session::get()->setSignatureToken($this->serverUser.":".$this->loginUser, $signToken);
 
 		// Check if the user has a change to login, i.e., if we know him
 		$userIdentity = Session::get()->getMainUserIdentity($this->serverUser);
 		// if $userIdentity is null the database is invalid give the user a change to upload a profile
 		if ($userIdentity != null) {
-			$contact = $userIdentity->findContact($this->userName);
-			if ($userIdentity->getMyself()->getUid() != $this->userName && $contact === null) {
+			$contact = $userIdentity->findContact($this->loginUser);
+			if ($userIdentity->getMyself()->getUid() != $this->loginUser && $contact === null) {
 				// produce output
 				$outStream = new ProtocolOutStream();
 				$outStream->pushStanza(new IqOutStanza(IqType::$kResult));
@@ -75,7 +73,13 @@ class AccountAuthStanzaHandler extends InStanzaHandler {
 class AccountAuthSignedStanzaHandler extends InStanzaHandler {
 	private $inStreamReader;
 	private $errorMessage = "";
+	private $serverUser = "";
+	private $loginUser = "";
 	private $signature;
+
+	private function getPurpose() {
+		return $this->serverUser.":".$this->loginUser;
+	}
 
 	public function __construct($inStreamReader) {
 		InStanzaHandler::__construct(AuthConst::$kAuthSignedStanza);
@@ -86,8 +90,15 @@ class AccountAuthSignedStanzaHandler extends InStanzaHandler {
 		$this->signature = $xml->getAttribute("signature");
 		if ($this->signature == "")
 			return false;
-			
 		$this->signature = url_decode($this->signature);
+
+		$this->serverUser = $xml->getAttribute("serverUser");
+		if ($this->serverUser == "")
+			return false;
+		$this->loginUser = $xml->getAttribute("loginUser");
+		if ($this->loginUser == "")
+			return false;
+			
 		return true;
 	}
 
@@ -99,24 +110,24 @@ class AccountAuthSignedStanzaHandler extends InStanzaHandler {
 	}
 
 	public function finished() {
-		$loginServerUser = Session::get()->getLoginServerUser();
-		$userIdentity = Session::get()->getMainUserIdentity($loginServerUser);
+		$userIdentity = Session::get()->getMainUserIdentity($this->serverUser);
 
+		$status = false;
 		$roles = Session::get()->getUserRoles();
 		if ($userIdentity != null) {
-			$loginUser = Session::get()->getLoginUser();
+			$loginUser = $this->loginUser;
 			$myself = $userIdentity->getMyself();
 			if ($myself->getUid() == $loginUser) {
-				$this->accountLogin($myself, $roles);
+				$status = $this->accountLogin($myself, $roles);
 			} else {
 				$contact = $userIdentity->findContact($loginUser);
 				if ($contact !== null)
-					$this->userLogin($contact, $roles);
+					$status = $this->userLogin($contact, $roles);
 				else
 					$this->errorMessage = "can't find user: ".$loginUser;
 			}
 		} else {
-			$this->setupLogin($roles);
+			$status = $this->setupLogin($roles);
 		}
 		// cleanup from double logins.
 		//TODO: check earlier if verification was neccessary? so that we don't need to cleanup here
@@ -127,12 +138,12 @@ class AccountAuthSignedStanzaHandler extends InStanzaHandler {
 		$outStream = new ProtocolOutStream();
 		$outStream->pushStanza(new IqOutStanza(IqType::$kResult));
 		$stanza = new OutStanza(AuthConst::$kAuthSignedStanza);
-		$status;
-		if (count($roles) > 0)
-			$status = "ok";
+		$statusMessage;
+		if ($status)
+			$statusMessage = "ok";
 		else
-			$status = "denied";
-		$stanza->addAttribute("status", $status);
+			$statusMessage = "denied";
+		$stanza->addAttribute("status", $statusMessage);
 		$stanza->addAttribute("message", $this->errorMessage);
 		$outStream->pushChildStanza($stanza);
 		$roles = Session::get()->getUserRoles();
@@ -151,36 +162,43 @@ class AccountAuthSignedStanzaHandler extends InStanzaHandler {
 	}
 
 	private function setupLogin(&$roles) {
-		$signatureFileName = Session::get()->getLoginServerUser()."/signature.pup";
+		$signatureFileName = $this->serverUser."/signature.pup";
 		$publickey = "";
 		if (file_exists($signatureFileName))
 			$publickey = file_get_contents($signatureFileName);
 
 		$signatureVerifier = new SignatureVerifier($publickey);
-		if (!$signatureVerifier->verify(Session::get()->getSignatureToken(), $this->signature)) {
+		if (!$signatureVerifier->verify(Session::get()->getSignatureToken($this->getPurpose()),
+			$this->signature)) {
 			$this->errorMessage = "can't verify setup login";
-			return;
+			return false;
 		}
-		Session::get()->setAccountUser(Session::get()->getLoginServerUser());
+		Session::get()->setAccountUser($this->serverUser);
 		$roles[] =  "account";
+		return true;
 	}
 
 	private function accountLogin($contact, &$roles) {
-		if (!$contact->verify($contact->getMainKeyId(), Session::get()->getSignatureToken(), $this->signature)) {
+		if (!$contact->verify($contact->getMainKeyId(),
+			Session::get()->getSignatureToken($this->getPurpose()), $this->signature)) {
 			$this->errorMessage = "can't verify account login";
-			return;
+			return false;
 		}
-		Session::get()->setAccountUser(Session::get()->getLoginServerUser());
+		Session::get()->setAccountUser($this->serverUser);
 		$roles[] =  "account";
+		return true;
 	}
 
 	private function userLogin($contact, &$roles) {
-		if (!$contact->verify($contact->getMainKeyId(), Session::get()->getSignatureToken(), $this->signature)) {
+		if (!$contact->verify($contact->getMainKeyId(),
+			Session::get()->getSignatureToken($this->getPurpose()), $this->signature)) {
 			$this->errorMessage = "can't verify user login";
-			return;
+			return false;
 		}
-		$loginServerUser = Session::get()->getLoginServerUser();
+		$loginServerUser = $this->serverUser;
 		$roles[] = $loginServerUser.":contact_user";
+		
+		return true;
 	}
 }
 

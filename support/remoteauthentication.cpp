@@ -93,8 +93,8 @@ void SignatureAuthentication::getLoginRequestData(QByteArray &data)
 
     OutStanza *authStanza =  new OutStanza(kAuthStanza);
     authStanza->addAttribute("type", "signature");
-    authStanza->addAttribute("user", authenticationInfo.getUserName());
-    authStanza->addAttribute("server_user", authenticationInfo.getServerUser());
+    authStanza->addAttribute("loginUser", authenticationInfo.getUserName());
+    authStanza->addAttribute("serverUser", authenticationInfo.getServerUser());
     outStream.pushChildStanza(authStanza);
 
     outStream.flush();
@@ -167,6 +167,8 @@ WP::err SignatureAuthentication::getLoginData(QByteArray &data, const QByteArray
     outStream.pushStanza(iqStanza);
     OutStanza *authStanza =  new OutStanza(kAuthSignedStanza);
     authStanza->addAttribute("signature", signature);
+    authStanza->addAttribute("serverUser", authenticationInfo.getServerUser());
+    authStanza->addAttribute("loginUser", authenticationInfo.getUserName());
     outStream.pushChildStanza(authStanza);
     outStream.flush();
 

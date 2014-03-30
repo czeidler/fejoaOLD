@@ -16,8 +16,6 @@ class Session {
 
 	public function clear() {
 		$this->setSignatureToken("");
-		$this->setLoginUser("");
-		$this->setServerUser("");
 		$this->setUserRoles(array());
 	}
 
@@ -52,32 +50,15 @@ class Session {
 		$_SESSION['account_user'] = $user;
 	}
 
-	public function setSignatureToken($token) {
-		$_SESSION['sign_token'] = $token;
+	// the purpose has the format: serverUserUid:loginUserID
+	// server user is the user who has the account on the server
+	// login user is the user who does the request
+	public function setSignatureToken($purpose, $token) {
+		$_SESSION[$purpose] = $token;
 	}
 
-	public function getSignatureToken() {
-		return $_SESSION['sign_token'];
-	}
-
-	// login user is a user who, for example, post a message to a server user account
-	public function setLoginUser($user) {
-		$_SESSION['login_user'] = $user;
-	}
-	
-	public function getLoginUser() {
-		return $_SESSION['login_user'];
-	}
-
-	// server user is the user who has an account on the server
-	public function setLoginServerUser($user) {
-		$_SESSION['login_server_user'] = $user;
-	}
-
-	public function getLoginServerUser() {
-		if (!isset($_SESSION['login_server_user']))
-			return "";
-		return $_SESSION['login_server_user'];
+	public function getSignatureToken($purpose) {
+		return $_SESSION[$purpose];
 	}
 
 	public function setUserRoles($roles) {
