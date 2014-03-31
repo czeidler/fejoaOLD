@@ -46,7 +46,13 @@ WP::err SyncManager::keepSynced(DatabaseInterface *branch)
     }
 
     RemoteSyncRef entry(new RemoteSync(branch, remoteDataStorage, this));
-    syncEntries.append(entry);
+    // The identities need to be synced before the mailboxes, e.g., it could happen that a new
+    // contact sent a message, in case the identities are not synced first loading the message will
+    // fail.
+    if (branch->branch() == "identities")
+        syncEntries.prepend(entry);
+    else
+        syncEntries.append(entry);
 
     if (watching)
         restartWatching();
@@ -109,8 +115,6 @@ void SyncManager::handleConnectionError(WP::err error)
 {
     abort();
 
-    // TODO: we don't need to lock out if we just paused
-    authentication->logout();
     emit connectionError();
 
     serverReply = NULL;
