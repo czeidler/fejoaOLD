@@ -1,6 +1,7 @@
 #ifndef REMOTEAUTHENTICATION_H
 #define REMOTEAUTHENTICATION_H
 
+#include <QSharedPointer>
 #include <QStringList>
 
 #include "remoteconnection.h"

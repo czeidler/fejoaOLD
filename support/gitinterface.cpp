@@ -986,17 +986,16 @@ WP::err GitInterface::getDiff(const QString &baseCommit, const QString &endCommi
 QStringList GitInterface::listDirectoryContent(const QString &path, int type) const
 {
     QStringList list;
-    git_tree *tree = getDirectoryTree(path);
+    QSharedPointer<git_tree> tree(getDirectoryTree(path));
     if (tree == NULL)
         return list;
-    int count = git_tree_entrycount(tree);
+    int count = git_tree_entrycount(tree.data());
     for (int i = 0; i < count; i++) {
-        const git_tree_entry *entry = git_tree_entry_byindex(tree, i);
+        const git_tree_entry *entry = git_tree_entry_byindex(tree.data(), i);
         if (type != -1 && git_tree_entry_type(entry) != type)
             continue;
         list.append(git_tree_entry_name(entry));
     }
-    git_tree_free(tree);
     return list;
 }
 
