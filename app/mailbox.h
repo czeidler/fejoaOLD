@@ -85,9 +85,13 @@ private:
 
     QStringList getUidFilePaths(QString path);
     QStringList getUidDirPaths(QString path);
-    QString pathForMessageId(const QString &channelId, const QString &messageId);
-    QString pathForChannelId(const QString &channelId);
-    QString dirForChannelId(const QString &channelId);
+    QStringList getChannelInfoPaths(const QString &channelPath);
+    QStringList getMessageBodyPaths(const QString &channelPath);
+    QString getChannelInfoPath(MessageChannelRef &channel, MessageChannelInfoRef &info);
+    QString getMessageBodyPath(MessageChannelRef &channel, MessageRef &message);
+    QString getMessagePath(MessageChannelRef &channel, MessageRef &message);
+    QString getChannelRootPath(MessageChannelRef &channel);
+    QString getChannelPath(MessageChannelRef &channel);
     QString makeUidPath(const QString &uid);
     WP::err writeParcel(const QString &path, DataParcel *parcel);
 

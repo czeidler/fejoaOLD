@@ -161,7 +161,7 @@ WP::err Mailbox::storeMessage(MessageRef message)
 
 WP::err Mailbox::storeChannel(MessageChannelRef channel)
 {
-    QString channelPath = pathForChannelId(channel->getUid());
+    QString channelPath = getChannelRootPath(channel);
     return writeParcel(channelPath, channel.data());
 }
 
@@ -178,8 +178,7 @@ WP::err Mailbox::storeChannelInfo(MessageChannelRef channel, MessageChannelInfoR
     if (error != WP::kOk)
         return error;
 
-    QString channelInfoPath = dirForChannelId(channel->getUid());
-    channelInfoPath += "/i/" + makeUidPath(info->getUid());
+    QString channelInfoPath = getChannelInfoPath(channel, info);
     return write(channelInfoPath, data.buffer());
 }
 
@@ -196,25 +195,50 @@ WP::err Mailbox::storeMessage(MessageRef message, MessageChannelRef channel)
     if (error != WP::kOk)
         return error;
 
-    QString messagePath = pathForMessageId(channel->getUid(), message->getUid());
-    messagePath += "/m";
+    QString messagePath = getMessageBodyPath(channel, message);
 
     return write(messagePath, data.buffer());
 }
 
-QString Mailbox::pathForMessageId(const QString &channelId, const QString &messageId)
+
+QStringList Mailbox::getChannelInfoPaths(const QString &channelPath)
 {
-    return dirForChannelId(channelId) + "/" + makeUidPath(messageId);
+    return getUidFilePaths(channelPath + "/i");
 }
 
-QString Mailbox::pathForChannelId(const QString &channelId)
+QStringList Mailbox::getMessageBodyPaths(const QString &channelPath)
 {
-    return dirForChannelId(channelId) + "/r";
+    QStringList paths = getUidDirPaths(channelPath);
+    for (int i = 0; i < paths.count(); i++) {
+        QString &path = paths[i];
+        path += "/m";
+    }
+    return paths;
 }
 
-QString Mailbox::dirForChannelId(const QString &channelId)
+QString Mailbox::getChannelInfoPath(MessageChannelRef &channel, MessageChannelInfoRef &info)
 {
-    return makeUidPath(channelId);
+    return getChannelPath(channel) + "/i/" + makeUidPath(info->getUid());
+}
+
+QString Mailbox::getMessageBodyPath(MessageChannelRef &channel, MessageRef &message)
+{
+    return getMessagePath(channel, message) + "/m";
+}
+
+QString Mailbox::getMessagePath(MessageChannelRef &channel, MessageRef &message)
+{
+    return getChannelPath(channel) + "/" + makeUidPath(message->getUid());
+}
+
+QString Mailbox::getChannelRootPath(MessageChannelRef &channel)
+{
+    return getChannelPath(channel) + "/r";
+}
+
+QString Mailbox::getChannelPath(MessageChannelRef &channel)
+{
+    return makeUidPath(channel->getUid());
 }
 
 QString Mailbox::makeUidPath(const QString &uid)
@@ -420,16 +444,15 @@ WP::err Mailbox::readThread(const QString &channelPath) {
 
 WP::err Mailbox::readThreadContent(const QString &channelPath, MessageThread *thread)
 {
-    QStringList infoUidPaths = getUidFilePaths(channelPath + "/i");
+    QStringList infoUidPaths = getChannelInfoPaths(channelPath);
     for (int i = 0; i < infoUidPaths.count(); i++) {
         QString path = infoUidPaths.at(i);
         readThreadInfo(path, thread);
     }
 
-    QStringList messageUidPaths = getUidDirPaths(channelPath);
-    for (int i = 0; i < messageUidPaths.count(); i++) {
-        QString path = messageUidPaths.at(i);
-        path += "/m";
+    QStringList messageBodyPaths = getMessageBodyPaths(channelPath);
+    for (int i = 0; i < messageBodyPaths.count(); i++) {
+        QString path = messageBodyPaths.at(i);
 
         MessageRef message;
         if (readThreadMessage(path, thread, message) == WP::kOk)
